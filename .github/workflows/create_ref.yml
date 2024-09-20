@@ -13,6 +13,9 @@ jobs:
   download_reference_genomes:
     runs-on: ubuntu-20.04
     steps:
+      - name: Check Out Repository
+        uses: actions/checkout@master
+      
       - name: Download Datasets and Dataformat
         run: |
           wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
@@ -80,6 +83,12 @@ jobs:
             rm README.md
             rm md5sum.txt
           done < ids.txt
+
+      - name: Remove Mash and Datasets
+        run: |
+          rm -rf mash/
+          rm datasets
+          rm dataformat
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@main
