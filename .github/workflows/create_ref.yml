@@ -42,6 +42,8 @@ jobs:
       - name: get genome list
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir -p data
+          cd data
           datasets summary genome taxon bacteria --reference --as-json-lines | \
             dataformat tsv genome --fields accession,organism-name --elide-header | \
             head -n 25 |
@@ -83,6 +85,9 @@ jobs:
             rm README.md
             rm md5sum.txt
           done < ids.txt
+
+      - name: Compress Sketch
+        run: gzip RefSeqSketches_${{ github.event.inputs.version }}.msh
 
       - name: Remove Mash and Datasets
         run: |
