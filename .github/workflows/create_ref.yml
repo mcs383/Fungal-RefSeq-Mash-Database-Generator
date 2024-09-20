@@ -72,7 +72,7 @@ jobs:
             
             echo "preparing $id $ge $sp"
 
-            datasets download genome accession $id
+            datasets download genome accession $id --no-progressbar
             unzip ncbi_dataset.zip
             cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
             if [ ! -f RefSeqSketches_${{ github.event.inputs.version }}.msh ]
