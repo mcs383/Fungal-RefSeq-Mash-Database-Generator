@@ -67,7 +67,8 @@ jobs:
               ls -alh all.msh
             fi
             rm ${ge}_${sp}_${id}.fasta
-            rm -rf ncbi_dataset*
+            rm -rf ncbi_dataset/
+            rm -rf ncbi_dataset.zip
           done < ids.txt
 
       
