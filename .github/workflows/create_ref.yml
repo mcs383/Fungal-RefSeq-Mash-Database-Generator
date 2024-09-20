@@ -18,5 +18,4 @@ jobs:
     steps:
       - name: check software
         run: |
-          ./datasets -v
           ls
