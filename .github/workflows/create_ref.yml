@@ -13,6 +13,7 @@ jobs:
     uses: ./.github/workflows/install_mash.yml
 
   download_reference_genomes:
+    needs: [install_datasets, install_mash]
     runs-on: ubuntu-20.04
     steps:
       - name: check software
