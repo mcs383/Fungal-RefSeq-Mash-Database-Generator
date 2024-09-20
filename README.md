@@ -4,7 +4,7 @@ The mash reference that can be downloaded from [the mash documentaion](https://m
 
 I do not inherently have a problem with RefSeq version 70, but RefSeq is well past version 200 now. 
 
-RefSeq updates four times year, and I needed an easy way to create and distribute a workflow mash sketch file.
+RefSeq updates four times year, and I needed an easy way to create and distribute a mash sketch file of the representative bacterial/prokaryotic genomes.
 
 To replicate the methods:
 ## Step 1. Download Datasets and Dataformat
