@@ -1,0 +1,12 @@
+{
+    "metadata": {
+        "title": "Mash Sketch of RefSeq Bacterial Representative Genomes",
+        "upload_type": "Dataset",
+        "description": "This is a mash sketch reference file for the bacterial RefSeq reference genomes. Reference genomes are identified via datasets and then downloaded one at time. Each *genome.fasta is renamed to include the genus, species, and accession in the filename. Then this file is \"sketch\"ed with mash using default values. Each sketch is then pasted together into one file with the RefSeq version in the filename. The resultant file is then compressed with gzip.",
+        "creators": [
+            {
+                "name": "Young, Erin"
+            }
+        ]
+    }
+}
