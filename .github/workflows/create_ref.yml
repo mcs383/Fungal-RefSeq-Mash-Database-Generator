@@ -5,17 +5,21 @@ on: [workflow_dispatch, workflow_call]
 run-name: Create Reference
 
 jobs:
-
-  install_datasets:
-    uses: ./.github/workflows/install_datasets.yml
-
-  install_mash:
-    uses: ./.github/workflows/install_mash.yml
-
   download_reference_genomes:
-    needs: [install_datasets, install_mash]
     runs-on: ubuntu-20.04
     steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+
       - name: check software
         run: |
           ls
