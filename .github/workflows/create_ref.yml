@@ -19,7 +19,11 @@ jobs:
           wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
           tar -xvf mash-Linux64-v2.3.tar
           rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
 
       - name: check software
         run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
           ls
+          mash -h
+          datasets
