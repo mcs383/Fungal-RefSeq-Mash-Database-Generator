@@ -37,7 +37,6 @@ jobs:
             sed 's/\[//g' | \
             sed 's/\]//g' | \
             sed 's/["'\'']//g' | \
-            sed 's/\./_/g' | \
             sed 's/endosymbiont of /endosymbiont_of_/g' > \
             ids.txt
           
