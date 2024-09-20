@@ -30,7 +30,7 @@ jobs:
           mv mash-Linux64-v2.3 mash
 
       - name: remove old file
-        run: rm RefSeqSketches*msh
+        run: rm data/RefSeqSketches*msh
 
       - name: check software
         run: |
