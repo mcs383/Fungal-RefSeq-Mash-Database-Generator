@@ -1,0 +1,21 @@
+name: Create Reference
+
+on: workflow_dispatch
+
+run-name: Create Reference
+
+jobs:
+
+  install_datasets:
+    uses: ./.github/workflows/install_datasets.yml
+
+  install_mash:
+    uses: ./.github/workflows/install_mash.yml
+
+  download_reference_genomes:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: check software
+        run: |
+          ./datasets -v
+          ls
