@@ -1,0 +1,25 @@
+GCF_000196515.1	Nostoc azollae 0708
+GCF_000022305.1	Acidovorax ebreus TPSY
+GCF_002057455.1	Actinomadura parvosata subsp. kistnae
+GCF_900094975.1	Bacillus enclensis
+GCF_000093085.1	Bacillus selenitireducens MLS10
+GCF_000687555.1	Clostridium aerotolerans DSM 5434
+GCF_900112885.1	Clostridium aminophilum
+GCF_025566905.1	Clostridium ammoniilyticum
+GCF_025149125.1	Clostridium asparagiforme DSM 15981
+GCF_002797975.1	Clostridium celerecrescens 18A
+GCF_940677205.1	Clostridium colinum
+GCF_900111235.1	Clostridium fimetarium
+GCF_022845755.1	Clostridium hylemonae
+GCF_900111595.1	Clostridium polysaccharolyticum
+GCF_000144625.1	Clostridium saccharolyticum WM1
+GCF_004295125.1	Clostridium scindens ATCC 35704
+GCF_008632235.1	Clostridium symbiosum
+GCF_000511955.1	Clostridium ultunense DSM 10521
+GCF_003710245.1	Curtobacterium plantarum
+GCF_000164865.1	Enterobacter lignolyticus SCF1
+GCF_900604315.1	Erwinia mediterraneensis
+GCF_000621585.1	Eubacterium cellulosolvens LD2006
+GCF_000146185.1	Eubacterium eligens ATCC 27750
+GCF_001647695.1	Haemophilus ducreyi
+GCF_036240075.1	Kitasatospora papulosa
