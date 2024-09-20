@@ -6,7 +6,7 @@ run-name: Install Mash
 
 jobs:
 
-  test:
+  mash:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
