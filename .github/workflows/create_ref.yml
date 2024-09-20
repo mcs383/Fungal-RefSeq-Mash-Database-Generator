@@ -30,6 +30,7 @@ jobs:
 
       - name: get genome list
         run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
           datasets summary genome taxon bacteria --reference --as-json-lines | \
             dataformat tsv genome --fields accession,organism-name --elide-header | \
             sed 's/\[//g' | \
@@ -42,6 +43,7 @@ jobs:
           
       - name: work some magic
         run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
           while read line
           do
             id=$(echo $line | awk '{print $1}')
