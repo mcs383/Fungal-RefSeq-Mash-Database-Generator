@@ -1,6 +1,6 @@
 name: Install Mash
 
-on: workflow_dispatch
+on: [workflow_dispatch, workflow_call]
 
 run-name: Install Mash
 
