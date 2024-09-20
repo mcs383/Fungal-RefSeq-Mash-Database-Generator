@@ -1,6 +1,6 @@
 # Creating a MASH Reference
 
-The mash reference that can be downloaded from (the mash documentaion)[https://mash.readthedocs.io/en/latest/data.html] is for RefSeq version 70.
+The mash reference that can be downloaded from [the mash documentaion](https://mash.readthedocs.io/en/latest/data.html) is for RefSeq version 70.
 
 I do not inherently have a problem with RefSeq version 70, but RefSeq is well past version 200 now. 
 
