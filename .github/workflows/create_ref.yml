@@ -56,6 +56,7 @@ jobs:
       - name: work some magic
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
+          cd data
           while read line
           do
             id=$(echo $line | awk '{print $1}')
@@ -87,7 +88,9 @@ jobs:
           done < ids.txt
 
       - name: Compress Sketch
-        run: gzip RefSeqSketches_${{ github.event.inputs.version }}.msh
+        run: |
+          cd data
+          gzip RefSeqSketches_${{ github.event.inputs.version }}.msh
 
       - name: Remove Mash and Datasets
         run: |
