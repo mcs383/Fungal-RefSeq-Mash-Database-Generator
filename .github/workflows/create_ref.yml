@@ -68,7 +68,9 @@ jobs:
             fi
             rm ${ge}_${sp}_${id}.fasta
             rm -rf ncbi_dataset/
-            rm -rf ncbi_dataset.zip
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
           done < ids.txt
 
       
