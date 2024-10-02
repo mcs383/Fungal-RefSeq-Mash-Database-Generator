@@ -756,7 +756,7 @@ jobs:
 
 
   pull_together:
-    needs: [download_and_sketch_0, download_and_sketch_1]
+    needs: [download_and_sketch_0, download_and_sketch_1, download_and_sketch_2, download_and_sketch_3, download_and_sketch_4, download_and_sketch_5, download_and_sketch_6, download_and_sketch_7, download_and_sketch_8, download_and_sketch_9]
     runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repository
