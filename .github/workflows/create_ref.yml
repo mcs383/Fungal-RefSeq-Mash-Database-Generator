@@ -43,9 +43,6 @@ jobs:
 
       - name: split file
         run: |
-          # for testing
-          head -n 25 ids.txt > ids.tmp
-          mv ids.tmp ids.txt
           split -n  l/10 ids.txt -d --additional-suffix=.txt
 
       - name: Upload split id files
