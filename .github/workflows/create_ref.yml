@@ -10,33 +10,19 @@ on:
 run-name: Create Reference
 
 jobs:
-  download_reference_genomes:
+  list_reference_genomes:
     runs-on: ubuntu-20.04
     steps:
-      - name: Check Out Repository
-        uses: actions/checkout@master
-      
       - name: Download Datasets and Dataformat
         run: |
           wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
           wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
           chmod +x datasets dataformat
 
-      - name: Download Mash version 2.3
-        run: |
-          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
-          tar -xvf mash-Linux64-v2.3.tar
-          rm -rf mash-Linux64-v2.3.tar
-          mv mash-Linux64-v2.3 mash
-
-      - name: remove old file
-        run: rm data/RefSeqSketches*msh*
-
       - name: check software
         run: |
-          export PATH=$(pwd):$(pwd)/mash:$PATH
+          export PATH=$(pwd):$(pwd)/:$PATH
           ls
-          mash -h
           datasets
 
       - name: get genome list
@@ -58,10 +44,44 @@ jobs:
           genomes=$(wc -l ids.txt | awk '{print $1}')
           if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
 
+      - name: split file
+        run: |
+          split -n 10 ids.txt -d --additional-suffix=.txt
+
+      - name: Upload split id files
+        uses: actions/upload-artifact@v4
+        with:
+          path: x*.txt
+          
+  download_and_sketch_0:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          pattern: x00.txt
+
       - name: work some magic
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
-          cd data
+          mkdir tmp
+          cd tmp
+          pattern=00
+          
           while read line
           do
             id=$(echo $line | awk '{print $1}')
@@ -75,33 +95,126 @@ jobs:
             datasets download genome accession $id --no-progressbar
             unzip ncbi_dataset.zip
             cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
-            if [ ! -f RefSeqSketches_${{ github.event.inputs.version }}.msh ]
+            if [ ! -f ${pattern}_${{ github.event.inputs.version }}.msh ]
             then
-              mash sketch ${ge}_${sp}_${id}.fasta -o RefSeqSketches_${{ github.event.inputs.version }}
+              mash sketch ${ge}_${sp}_${id}.fasta -o ${pattern}_${{ github.event.inputs.version }}
             else          
               mash sketch ${ge}_${sp}_${id}.fasta -o ${ge}_${sp}_${id}
-              mv RefSeqSketches_${{ github.event.inputs.version }}.msh tmp.msh
-              mash paste RefSeqSketches_${{ github.event.inputs.version }} tmp.msh ${ge}_${sp}_${id}.msh
+              mv ${pattern}_${{ github.event.inputs.version }}.msh tmp.msh
+              mash paste ${pattern}_${{ github.event.inputs.version }} tmp.msh ${ge}_${sp}_${id}_00.msh
               rm tmp.msh ${ge}_${sp}_${id}.msh
-              ls -alh RefSeqSketches_${{ github.event.inputs.version }}.msh
+              ls -alh ${pattern}_${{ github.event.inputs.version }}.msh
             fi
             rm ${ge}_${sp}_${id}.fasta
             rm -rf ncbi_dataset/
             rm ncbi_dataset.zip
             rm README.md
             rm md5sum.txt
-          done < ids.txt
+          done < ../x${pattern}.txt
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+  download_and_sketch_1:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          pattern: x01.txt
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=01
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            if [ ! -f ${pattern}_${{ github.event.inputs.version }}.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o ${pattern}_${{ github.event.inputs.version }}
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o ${ge}_${sp}_${id}
+              mv ${pattern}_${{ github.event.inputs.version }}.msh tmp.msh
+              mash paste ${pattern}_${{ github.event.inputs.version }} tmp.msh ${ge}_${sp}_${id}_00.msh
+              rm tmp.msh ${ge}_${sp}_${id}.msh
+              ls -alh ${pattern}_${{ github.event.inputs.version }}.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+  pull_together:
+    needs: [download_and_sketch_0, download_and_sketch_1]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@master
+
+      - name: Download id0
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*msh"
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: remove old file
+        run: rm data/RefSeqSketches*msh*
+
+      - name: paste_together
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mash paste data/RefSeqSketches_${{ github.event.inputs.version }} x*msh
+          rm x*.msh
 
       - name: Compress Sketch
-        run: |
-          cd data
-          gzip RefSeqSketches_${{ github.event.inputs.version }}.msh
+        run: gzip data/RefSeqSketches_${{ github.event.inputs.version }}.msh
 
-      - name: Remove Mash and Datasets
-        run: |
-          rm -rf mash/
-          rm datasets
-          rm dataformat
+      - name: Remove Mash
+        run: rm -rf mash
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@main
