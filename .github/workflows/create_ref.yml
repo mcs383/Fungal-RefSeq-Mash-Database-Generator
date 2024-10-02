@@ -48,6 +48,7 @@ jobs:
       - name: Upload split id files
         uses: actions/upload-artifact@v4
         with:
+          name: ids-${{ github.event.inputs.version }}
           path: x*.txt
           
   download_and_sketch_0:
@@ -70,7 +71,7 @@ jobs:
       - name: Download ids
         uses: actions/download-artifact@v4
         with:
-          pattern: x00.txt
+          name: ids-${{ github.event.inputs.version }}
 
       - name: work some magic
         run: |
@@ -135,7 +136,7 @@ jobs:
       - name: Download ids
         uses: actions/download-artifact@v4
         with:
-          pattern: x01.txt
+          name: ids-${{ github.event.inputs.version }}
 
       - name: work some magic
         run: |
