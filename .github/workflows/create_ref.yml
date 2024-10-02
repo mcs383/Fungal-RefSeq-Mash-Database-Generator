@@ -43,7 +43,7 @@ jobs:
 
       - name: split file
         run: |
-          split -n 10 ids.txt -d --additional-suffix=.txt
+          split -n  l/10 ids.txt -d --additional-suffix=.txt
 
       - name: Upload split id files
         uses: actions/upload-artifact@v4
@@ -94,15 +94,15 @@ jobs:
             unzip ncbi_dataset.zip
             cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
             
-            if [ ! -f ${pattern}_${{ github.event.inputs.version }}.msh ]
+            if [ ! -f final.msh ]
             then
-              mash sketch ${ge}_${sp}_${id}.fasta -o ${pattern}_${{ github.event.inputs.version }}
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
             else          
               mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
-              mv ${pattern}_${{ github.event.inputs.version }}.msh tmp.msh
-              mash paste ${pattern}_${{ github.event.inputs.version }} tmp.msh sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
               rm tmp.msh sample.msh
-              ls -alh ${pattern}_${{ github.event.inputs.version }}.msh
+              ls -alh final.msh
             fi
             rm ${ge}_${sp}_${id}.fasta
             rm -rf ncbi_dataset/
@@ -110,6 +110,8 @@ jobs:
             rm README.md
             rm md5sum.txt
           done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
 
       - name: Upload sketch
         uses: actions/upload-artifact@v4
@@ -159,15 +161,16 @@ jobs:
             datasets download genome accession $id --no-progressbar
             unzip ncbi_dataset.zip
             cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
-            if [ ! -f ${pattern}_${{ github.event.inputs.version }}.msh ]
+            
+            if [ ! -f final.msh ]
             then
-              mash sketch ${ge}_${sp}_${id}.fasta -o ${pattern}_${{ github.event.inputs.version }}
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
             else          
-              mash sketch ${ge}_${sp}_${id}.fasta -o ${ge}_${sp}_${id}
-              mv ${pattern}_${{ github.event.inputs.version }}.msh tmp.msh
-              mash paste ${pattern}_${{ github.event.inputs.version }} tmp.msh ${ge}_${sp}_${id}_00.msh
-              rm tmp.msh ${ge}_${sp}_${id}.msh
-              ls -alh ${pattern}_${{ github.event.inputs.version }}.msh
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
             fi
             rm ${ge}_${sp}_${id}.fasta
             rm -rf ncbi_dataset/
@@ -175,6 +178,8 @@ jobs:
             rm README.md
             rm md5sum.txt
           done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
 
       - name: Upload sketch
         uses: actions/upload-artifact@v4
