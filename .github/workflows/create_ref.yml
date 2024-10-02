@@ -191,6 +191,570 @@ jobs:
           name: 01_${{ github.event.inputs.version }}_sketch
           path: tmp/*_${{ github.event.inputs.version }}.msh
 
+  download_and_sketch_2:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=02
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 02_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+  download_and_sketch_3:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=03
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 03_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+
+  download_and_sketch_4:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=04
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 04_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+
+  download_and_sketch_5:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=05
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 05_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+  download_and_sketch_6:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=06
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 06_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+  download_and_sketch_7:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=07
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 07_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+  download_and_sketch_8:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=08
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 08_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+  download_and_sketch_9:
+    needs: list_reference_genomes
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          pattern=09
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${pattern}.txt
+
+          mv final.msh ${pattern}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: 09_${{ github.event.inputs.version }}_sketch
+          path: tmp/*_${{ github.event.inputs.version }}.msh
+
+
+
+
+
   pull_together:
     needs: [download_and_sketch_0, download_and_sketch_1]
     runs-on: ubuntu-20.04
