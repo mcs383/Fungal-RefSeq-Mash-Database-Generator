@@ -219,7 +219,7 @@ jobs:
           ls
           ls *_${{ github.event.inputs.version }}_sketch
           mash paste data/RefSeqSketches_${{ github.event.inputs.version }} *_${{ github.event.inputs.version }}_sketch/*_${{ github.event.inputs.version }}.msh
-          rm x*.msh
+          rm -rf *_${{ github.event.inputs.version }}_sketch
 
       - name: Compress Sketch
         run: gzip data/RefSeqSketches_${{ github.event.inputs.version }}.msh
