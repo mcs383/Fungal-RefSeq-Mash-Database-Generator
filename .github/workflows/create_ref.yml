@@ -217,7 +217,8 @@ jobs:
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
           ls
-          mash paste data/RefSeqSketches_${{ github.event.inputs.version }} *_${{ github.event.inputs.version }}.msh
+          ls *_${{ github.event.inputs.version }}_sketch
+          mash paste data/RefSeqSketches_${{ github.event.inputs.version }} *_${{ github.event.inputs.version }}_sketch/*_${{ github.event.inputs.version }}.msh
           rm x*.msh
 
       - name: Compress Sketch
