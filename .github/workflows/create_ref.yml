@@ -198,7 +198,7 @@ jobs:
       - name: Check Out Repository
         uses: actions/checkout@master
 
-      - name: Download id0
+      - name: Download sketches
         uses: actions/download-artifact@v4
         with:
           pattern: "*${{ github.event.inputs.version }}_sketch"
@@ -216,7 +216,8 @@ jobs:
       - name: paste_together
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
-          mash paste data/RefSeqSketches_${{ github.event.inputs.version }} x*msh
+          ls
+          mash paste data/RefSeqSketches_${{ github.event.inputs.version }} *_${{ github.event.inputs.version }}.msh
           rm x*.msh
 
       - name: Compress Sketch
