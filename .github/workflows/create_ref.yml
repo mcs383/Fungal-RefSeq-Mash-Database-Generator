@@ -93,14 +93,15 @@ jobs:
             datasets download genome accession $id --no-progressbar
             unzip ncbi_dataset.zip
             cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
             if [ ! -f ${pattern}_${{ github.event.inputs.version }}.msh ]
             then
               mash sketch ${ge}_${sp}_${id}.fasta -o ${pattern}_${{ github.event.inputs.version }}
             else          
-              mash sketch ${ge}_${sp}_${id}.fasta -o ${ge}_${sp}_${id}
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
               mv ${pattern}_${{ github.event.inputs.version }}.msh tmp.msh
-              mash paste ${pattern}_${{ github.event.inputs.version }} tmp.msh ${ge}_${sp}_${id}_00.msh
-              rm tmp.msh ${ge}_${sp}_${id}.msh
+              mash paste ${pattern}_${{ github.event.inputs.version }} tmp.msh sample.msh
+              rm tmp.msh sample.msh
               ls -alh ${pattern}_${{ github.event.inputs.version }}.msh
             fi
             rm ${ge}_${sp}_${id}.fasta
