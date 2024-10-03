@@ -2,12 +2,6 @@ name: Step1 Create Reference
 
 on: 
   workflow_dispatch:
-#    inputs:
-#      version:
-#        description: "refseq version"
-#        required: true
-
-#run-name: Create reference list for ${{ github.event.inputs.version }}
 
 run-name: Create reference list
 
@@ -42,13 +36,13 @@ jobs:
         run: |
           genomes=$(wc -l ids.txt | awk '{print $1}')
           echo "There are ${genomes} genomes in id.txt"
-          head -n 25 ids.txt > ids.tmp
-          mv ids.tmp ids.txt
-          #if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
+          #head -n 25 ids.txt > ids.tmp
+          #mv ids.tmp ids.txt
+          if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
 
       - name: split file
         run: |
-          split -n  l/10 ids.txt -d --additional-suffix=.txt
+          split -n  l/9 ids.txt -d --additional-suffix=.txt
           ls x*txt
 
       - name: Upload split files as artifact
@@ -57,15 +51,3 @@ jobs:
           name: genome-split-files
           path: x*.txt
           overwrite: true
-
-#      - name: Cache file
-#        uses: actions/cache@v3
-#        with:
-#          path: x*_${{ github.event.inputs.version }}.txt
-#          key: id-list-cache
-#
-#      - name: Upload split id files
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: ids-${{ github.event.inputs.version }}
-#          path: x*.txt
