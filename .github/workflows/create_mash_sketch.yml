@@ -17,8 +17,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: genome-split-files
-          #github-token: ${{ github.token }}
-          #repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
 #          github-token: ${{ secrets.GH_PAT }}
  #         repository: erinyoung/update_mash_dist
           run-id: 11170022177
