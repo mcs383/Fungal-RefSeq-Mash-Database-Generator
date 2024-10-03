@@ -20,7 +20,7 @@ jobs:
           https://api.github.com/repos/erinyoung/update_mash_dist/actions/runs/31046071401/artifacts
 
       - name: Download the ids
-        uses: actions/download-artifact@main
+        uses: actions/download-artifact@v4
         with:
           name: genome-split-files
           github-token: ${{ secrets.GH_PAT }}
@@ -92,7 +92,7 @@ jobs:
           mv final.msh ${{ github.event.inputs.chunk }}.msh
 
       - name: Upload sketch
-        uses: actions/upload-artifact@main
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.chunk }}_sketch
           path: ${{ github.event.inputs.chunk }}.msh
