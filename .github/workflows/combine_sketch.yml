@@ -6,6 +6,38 @@ on:
       version:
         description: "refseq version"
         required: true
+      run0:
+        description: "refseq version"
+        required: true
+      run1:
+        description: "mash sketch run"
+        required: true
+      run2:
+        description: "mash sketch run"
+        required: true
+      run3:
+        description: "mash sketch run"
+        required: true
+      run4:
+        description: "mash sketch run"
+        required: true
+      run5:
+        description: "mash sketch run"
+        required: true
+      run6:
+        description: "mash sketch run"
+        required: true
+      run7:
+        description: "mash sketch run"
+        required: true
+      run8:
+        description: "mash sketch run"
+        required: true
+      run9:
+        description: "mash sketch run"
+        required: true
+
+
 
 run-name: Combine sketches for ${{ github.event.inputs.version }}
 
@@ -16,30 +48,92 @@ jobs:
       - name: Check Out Repository
         uses: actions/checkout@master
 
-      - name: Download sketches
+      - name: Download the sketch from run 0
         uses: actions/download-artifact@v4
         with:
-          pattern: "*${{ github.event.inputs.version }}_sketch"
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run0 }}
 
-      - name: Check mash files
-        run: |
-          warning=""
+      - name: Download the sketch from run 1
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run1 }}
 
-          for chunk in 00 01 02 03 04 05 06 07 08 09
-          do
-            if [ ! -f ${chunk}_${{ github.event.inputs.version }}_sketch/${chunk}_${{ github.event.inputs.version }}.msh ]
-            then
-              warning="${warning}missing ${chunk} msh file; "
-            fi
-          done
-          if [ -n "${warning}" ] ; then echo "Missing files!" ; echo ${warning} ; exit 1; fi
+      - name: Download the sketch from run 2
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run2 }}
+
+      - name: Download the sketch from run 3
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run3 }}
+
+      - name: Download the sketch from run 4
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run4 }}
+
+      - name: Download the sketch from run 5
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run5 }}
+
+      - name: Download the sketch from run 6
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run6 }}
+
+      - name: Download the sketch from run 7
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run7 }}
+
+      - name: Download the sketch from run 8
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run8 }}
+
+      - name: Download the sketch from run 9
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*_sketch"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run9 }}
 
       - name: remove old file
         run: rm data/RefSeqSketches*msh*
 
       - name: Download Mash version 2.3
         run: |
-          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
           tar -xvf mash-Linux64-v2.3.tar
           rm -rf mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
@@ -48,9 +142,9 @@ jobs:
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
           ls
-          ls *_${{ github.event.inputs.version }}_sketch
-          mash paste data/RefSeqSketches_${{ github.event.inputs.version }} *_${{ github.event.inputs.version }}_sketch/*_${{ github.event.inputs.version }}.msh
-          rm -rf *_${{ github.event.inputs.version }}_sketch
+          ls *_sketch
+          mash paste data/RefSeqSketches_${{ github.event.inputs.version }} *_sketch/*.msh
+          rm -rf *_sketch
 
       - name: Compress Sketch
         run: gzip data/RefSeqSketches_${{ github.event.inputs.version }}.msh
@@ -70,6 +164,3 @@ jobs:
   
               [1]: https://github.com/peter-evans/create-pull-request
             branch: update-mash
-
-      
-          
