@@ -10,7 +10,7 @@ on:
         description: "chunk of ids.txt to work on [00-09]"
         required: true
 
-run-name: Create Sketch for ${{ github.event.inputs.chunk }}
+run-name: Create sketch for chunk ${{ github.event.inputs.chunk }} from ${{ github.event.inputs.chunk }}
 
 jobs:          
   download_and_sketch:
@@ -60,21 +60,19 @@ jobs:
             unzip ncbi_dataset.zip
             cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
             
-            if [ ! -f final.msh ]
+            if [ ! -f "final.msh" ]
             then
               mash sketch ${ge}_${sp}_${id}.fasta -o final
             else          
-              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample
               mv final.msh tmp.msh
               mash paste final tmp.msh sample.msh
               rm tmp.msh sample.msh
-              ls -alh final.msh
             fi
-            rm ${ge}_${sp}_${id}.fasta
-            rm -rf ncbi_dataset/
-            rm ncbi_dataset.zip
-            rm README.md
-            rm md5sum.txt
+
+            ls -alh final.msh
+  
+            rm -rf ${ge}_${sp}_${id}.fasta ncbi_dataset/ ncbi_dataset.zip README.md md5sum.txt
           done < x${{ github.event.inputs.chunk }}.txt
 
           mv final.msh ${{ github.event.inputs.chunk }}.msh
