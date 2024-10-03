@@ -7,7 +7,7 @@ on:
         description: "refseq version"
         required: true
       run0:
-        description: "refseq version"
+        description: "mash sketch run"
         required: true
       run1:
         description: "mash sketch run"
