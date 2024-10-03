@@ -35,6 +35,9 @@ jobs:
           path: x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
           key: id-list-${{ github.event.inputs.version }}
 
+      - name: Check files
+        run: ls 
+
       - name: work some magic
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
@@ -70,7 +73,7 @@ jobs:
             rm ncbi_dataset.zip
             rm README.md
             rm md5sum.txt
-          done < ../x${{ github.event.inputs.chunk }}.txt
+          done < x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
 
           mv final.msh ${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.msh
 
