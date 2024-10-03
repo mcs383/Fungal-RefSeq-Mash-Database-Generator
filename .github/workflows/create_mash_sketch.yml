@@ -18,13 +18,13 @@ jobs:
     steps:
       - name: Download Datasets and Dataformat
         run: |
-          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
-          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
           chmod +x datasets dataformat
 
       - name: Download Mash version 2.3
         run: |
-          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
           tar -xvf mash-Linux64-v2.3.tar
           rm -rf mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
@@ -33,6 +33,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ids-${{ github.event.inputs.version }}
+
+      - name: Get IDs from cache
+        uses: actions/cache@v3
+        with:
+          path: x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
+          key: id-list-${{ github.event.inputs.version }}
 
       - name: work some magic
         run: |
