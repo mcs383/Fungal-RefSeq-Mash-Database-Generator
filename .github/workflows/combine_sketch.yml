@@ -1,4 +1,4 @@
-name: Combine sketches
+name: Step3 Combine sketches
 
 on: 
   workflow_dispatch:
