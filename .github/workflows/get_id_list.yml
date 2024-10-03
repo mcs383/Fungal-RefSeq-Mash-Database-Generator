@@ -1,0 +1,52 @@
+name: Create Reference
+
+on: 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "refseq version"
+        required: true
+
+run-name: Create reference list for ${{ github.event.inputs.version }}
+
+jobs:
+  list_reference_genomes:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: check software
+        run: |
+          export PATH=$(pwd):$(pwd)/:$PATH
+          ls
+          datasets
+
+      - name: get genome list
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          datasets summary genome taxon bacteria --reference --as-json-lines | \
+            dataformat tsv genome --fields accession,organism-name --elide-header | \
+            sed 's/\[//g' | \
+            sed 's/\]//g' | \
+            sed 's/["'\'']//g' | \
+            sed 's/endosymbiont of /endosymbiont_of_/g' > \
+            ids.txt
+
+      - name: check size
+        run: |
+          genomes=$(wc -l ids.txt | awk '{print $1}')
+          if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
+
+      - name: split file
+        run: |
+          split -n  l/10 ids.txt -d --additional-suffix=.txt
+
+      - name: Upload split id files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+          path: x*.txt
