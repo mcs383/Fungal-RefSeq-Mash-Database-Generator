@@ -27,7 +27,7 @@ jobs:
           mv mash-Linux64-v2.3 mash
 
       - name: Download the artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@main
         with:
           name: genome-split-files
           path: ./reference_files
@@ -85,7 +85,7 @@ jobs:
           mv final.msh ${{ github.event.inputs.chunk }}.msh
 
       - name: Upload sketch
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@main
         with:
           name: ${{ github.event.inputs.chunk }}_sketch
           path: ${{ github.event.inputs.chunk }}.msh
