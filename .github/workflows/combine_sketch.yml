@@ -33,11 +33,6 @@ on:
       run8:
         description: "mash sketch run"
         required: true
-      run9:
-        description: "mash sketch run"
-        required: true
-
-
 
 run-name: Combine sketches for ${{ github.event.inputs.version }}
 
@@ -119,14 +114,6 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.inputs.run8 }}
-
-      - name: Download the sketch from run 9
-        uses: actions/download-artifact@v4
-        with:
-          pattern: "*_sketch"
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.event.inputs.run9 }}
 
       - name: remove old file
         run: rm data/RefSeqSketches*msh*
