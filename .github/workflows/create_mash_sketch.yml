@@ -81,5 +81,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.chunk }}_sketch
-          path: ${{ github.event.inputs.chunk }}.msh
+          path: tmp/${{ github.event.inputs.chunk }}.msh
           overwrite: true
