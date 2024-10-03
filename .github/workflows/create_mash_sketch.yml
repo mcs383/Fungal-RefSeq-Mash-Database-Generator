@@ -1,0 +1,80 @@
+name: Create Sketch
+
+on: 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "refseq version"
+        required: true
+      chunk:
+        description: "chunk of ids.txt to work on [00-09]"
+        required: true
+
+run-name: Create Sketch for ${{ github.event.inputs.chunk }} chunk of version ${{ github.event.inputs.version }}
+
+jobs:          
+  download_and_sketch:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download Datasets and Dataformat
+        run: |
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          chmod +x datasets dataformat
+
+      - name: Download Mash version 2.3
+        run: |
+          wget https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar
+          rm -rf mash-Linux64-v2.3.tar
+          mv mash-Linux64-v2.3 mash
+
+      - name: Download ids
+        uses: actions/download-artifact@v4
+        with:
+          name: ids-${{ github.event.inputs.version }}
+
+      - name: work some magic
+        run: |
+          export PATH=$(pwd):$(pwd)/mash:$PATH
+          mkdir tmp
+          cd tmp
+          
+          while read line
+          do
+            id=$(echo $line | awk '{print $1}')
+            ge=$(echo $line | awk '{print $2}')
+            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
+            sp=$(echo $line | awk '{print $3}')
+            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+            
+            echo "preparing $id $ge $sp"
+
+            datasets download genome accession $id --no-progressbar
+            unzip ncbi_dataset.zip
+            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            
+            if [ ! -f final.msh ]
+            then
+              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            else          
+              mash sketch ${ge}_${sp}_${id}.fasta -o sample.msh
+              mv final.msh tmp.msh
+              mash paste final tmp.msh sample.msh
+              rm tmp.msh sample.msh
+              ls -alh final.msh
+            fi
+            rm ${ge}_${sp}_${id}.fasta
+            rm -rf ncbi_dataset/
+            rm ncbi_dataset.zip
+            rm README.md
+            rm md5sum.txt
+          done < ../x${{ github.event.inputs.chunk }}.txt
+
+          mv final.msh ${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.msh
+
+      - name: Upload sketch
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}_sketch
+          path: ${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.msh
