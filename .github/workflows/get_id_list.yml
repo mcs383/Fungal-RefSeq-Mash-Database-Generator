@@ -35,10 +35,11 @@ jobs:
       - name: check size
         run: |
           genomes=$(wc -l ids.txt | awk '{print $1}')
+          wc -l ids.txt
           echo "There are ${genomes} genomes in id.txt"
-          #head -n 25 ids.txt > ids.tmp
-          #mv ids.tmp ids.txt
-          if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
+          # head -n 25 ids.txt > ids.tmp
+          # mv ids.tmp ids.txt
+          # if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
 
       - name: split file
         run: |
