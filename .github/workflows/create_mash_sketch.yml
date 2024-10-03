@@ -29,11 +29,6 @@ jobs:
           rm -rf mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
 
-      - name: Download ids
-        uses: actions/download-artifact@v4
-        with:
-          name: ids-${{ github.event.inputs.version }}
-
       - name: Get IDs from cache
         uses: actions/cache@v3
         with:
