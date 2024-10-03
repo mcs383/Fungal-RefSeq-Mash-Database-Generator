@@ -34,6 +34,8 @@ jobs:
         with:
           path: x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
           key: id-list-${{ github.event.inputs.version }}
+          restore-keys: |
+            id-list-
 
       - name: Check files
         run: ls 
