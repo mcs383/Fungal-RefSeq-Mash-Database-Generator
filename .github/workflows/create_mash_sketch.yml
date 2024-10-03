@@ -29,11 +29,20 @@ jobs:
           rm -rf mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
 
-      - name: Get IDs from cache
-        uses: actions/cache@v3
+      - name: Download the artifact
+        uses: actions/download-artifact@v3
         with:
-          path: x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
-          key: id-list-cache
+          name: genome-split-files-${{ github.event.inputs.version }}
+          path: ./reference_files
+
+      - name: Check downloaded files
+        run: ls -l ./reference_files
+#
+#      - name: Get IDs from cache
+#        uses: actions/cache@v3
+#        with:
+ #         path: x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
+ #         key: id-list-cache
 
       - name: Check files
         run: ls 
