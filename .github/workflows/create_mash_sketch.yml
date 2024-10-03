@@ -19,6 +19,7 @@ jobs:
           name: genome-split-files
           github-token: ${{ secrets.GH_PAT }}
           repository: erinyoung/update_mash_dist
+          run-id: 31046071401
       
       - name: Download Datasets and Dataformat
         run: |
