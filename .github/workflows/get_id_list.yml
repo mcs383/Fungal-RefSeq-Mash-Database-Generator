@@ -2,10 +2,10 @@ name: Step1 Create Reference
 
 on: 
   workflow_dispatch:
-    inputs:
-      version:
-        description: "refseq version"
-        required: true
+#    inputs:
+#      version:
+#        description: "refseq version"
+#        required: true
 
 run-name: Create reference list for ${{ github.event.inputs.version }}
 
@@ -15,8 +15,8 @@ jobs:
     steps:
       - name: Download Datasets and Dataformat
         run: |
-          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
-          wget https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
+          wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
           chmod +x datasets dataformat
 
       - name: check software
@@ -43,13 +43,15 @@ jobs:
 
       - name: split file
         run: |
-          split -n  l/10 ids.txt -d --additional-suffix=_${{ github.event.inputs.version }}.txt
+          split -n  l/10 ids.txt -d --additional-suffix=.txt
+          ls x*txt
 
       - name: Upload split files as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@main
         with:
-          name: genome-split-files-${{ github.event.inputs.version }}
-          path: x*_${{ github.event.inputs.version }}.txt
+          name: genome-split-files
+          path: x*.txt
+          overwrite: true
 
 #      - name: Cache file
 #        uses: actions/cache@v3
