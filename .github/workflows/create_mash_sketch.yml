@@ -1,4 +1,4 @@
-name: Create Sketch
+name: Step2 Create Sketches
 
 on: 
   workflow_dispatch:
