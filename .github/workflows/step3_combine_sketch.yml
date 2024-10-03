@@ -21,6 +21,19 @@ jobs:
         with:
           pattern: "*${{ github.event.inputs.version }}_sketch"
 
+      - name: Check mash files
+        run: |
+          warning=""
+
+          for chunk in 00 01 02 03 04 05 06 07 08 09
+          do
+            if [ ! -f ${chunk}_${{ github.event.inputs.version }}_sketch/${chunk}_${{ github.event.inputs.version }}.msh ]
+            then
+              warning="${warning}missing ${chunk} msh file; "
+            fi
+          done
+          if [ -n "${warning}" ] ; then echo "Missing files!" ; echo ${warning} ; exit 1; fi
+
       - name: remove old file
         run: rm data/RefSeqSketches*msh*
 
