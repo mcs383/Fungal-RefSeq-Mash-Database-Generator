@@ -33,9 +33,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
-          key: id-list-${{ github.event.inputs.version }}
-          restore-keys: |
-            id-list-
+          key: id-list-cache
 
       - name: Check files
         run: ls 
