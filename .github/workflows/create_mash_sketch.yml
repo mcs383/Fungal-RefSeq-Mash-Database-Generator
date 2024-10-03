@@ -13,6 +13,12 @@ jobs:
   download_and_sketch:
     runs-on: ubuntu-20.04
     steps:
+      - name: check artifacts
+        run: |
+          curl -H "Authorization: token ${{ secrets.GH_PAT }}" \
+          -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/erinyoung/update_mash_dist/actions/runs/31046071401/artifacts
+
       - name: Download the ids
         uses: actions/download-artifact@main
         with:
