@@ -3,6 +3,9 @@ name: Step2 Create Sketches
 on: 
   workflow_dispatch:
     inputs:
+      run:
+        description: run id for reference creation
+        required: true
       chunk:
         description: "chunk of ids.txt to work on [00-09]"
         required: true
@@ -19,9 +22,7 @@ jobs:
           name: genome-split-files
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-#          github-token: ${{ secrets.GH_PAT }}
- #         repository: erinyoung/update_mash_dist
-          run-id: 11170022177
+          run-id: ${{ github.event.inputs.run }}
       
       - name: Download Datasets and Dataformat
         run: |
@@ -35,15 +36,6 @@ jobs:
           tar -xvf mash-Linux64-v2.3.tar
           rm -rf mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
-
-      - name: Check downloaded files
-        run: ls -l ./reference_files
-#
-#      - name: Get IDs from cache
-#        uses: actions/cache@v3
-#        with:
- #         path: x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
- #         key: id-list-cache
 
       - name: Check files
         run: ls 
