@@ -7,7 +7,7 @@ on:
         description: run id for reference creation
         required: true
       chunk:
-        description: "chunk of ids.txt to work on [00-09]"
+        description: "chunk of ids.txt to work on [00-08]"
         required: true
 
 run-name: Create sketch for chunk ${{ github.event.inputs.chunk }} from ${{ github.event.inputs.run }}
