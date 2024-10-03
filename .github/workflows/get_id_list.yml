@@ -45,14 +45,20 @@ jobs:
         run: |
           split -n  l/10 ids.txt -d --additional-suffix=_${{ github.event.inputs.version }}.txt
 
-      - name: Cache file
-        uses: actions/cache@v3
+      - name: Upload split files as artifact
+        uses: actions/upload-artifact@v3
         with:
+          name: genome-split-files-${{ github.event.inputs.version }}
           path: x*_${{ github.event.inputs.version }}.txt
-          key: id-list-cache
 
-      - name: Upload split id files
-        uses: actions/upload-artifact@v4
-        with:
-          name: ids-${{ github.event.inputs.version }}
-          path: x*.txt
+#      - name: Cache file
+#        uses: actions/cache@v3
+#        with:
+#          path: x*_${{ github.event.inputs.version }}.txt
+#          key: id-list-cache
+#
+#      - name: Upload split id files
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: ids-${{ github.event.inputs.version }}
+#          path: x*.txt
