@@ -63,6 +63,9 @@ jobs:
             if [ ! -f "final.msh" ]
             then
               mash sketch ${ge}_${sp}_${id}.fasta -o final
+              ls final.msh
+              mv final.msh tmp.msh
+              mv tmp.msh final.msh
             else          
               mash sketch ${ge}_${sp}_${id}.fasta -o sample
               mv final.msh tmp.msh
