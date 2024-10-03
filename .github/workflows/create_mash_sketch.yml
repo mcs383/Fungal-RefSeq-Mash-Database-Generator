@@ -3,14 +3,11 @@ name: Step2 Create Sketches
 on: 
   workflow_dispatch:
     inputs:
-      version:
-        description: "refseq version"
-        required: true
       chunk:
         description: "chunk of ids.txt to work on [00-09]"
         required: true
 
-run-name: Create Sketch for ${{ github.event.inputs.chunk }} chunk of version ${{ github.event.inputs.version }}
+run-name: Create Sketch for ${{ github.event.inputs.chunk }}
 
 jobs:          
   download_and_sketch:
@@ -32,8 +29,9 @@ jobs:
       - name: Download the artifact
         uses: actions/download-artifact@v3
         with:
-          name: genome-split-files-${{ github.event.inputs.version }}
+          name: genome-split-files
           path: ./reference_files
+          github-token: ${{ secrets.GH_PAT }}
 
       - name: Check downloaded files
         run: ls -l ./reference_files
@@ -82,12 +80,13 @@ jobs:
             rm ncbi_dataset.zip
             rm README.md
             rm md5sum.txt
-          done < x${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.txt
+          done < x${{ github.event.inputs.chunk }}.txt
 
-          mv final.msh ${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.msh
+          mv final.msh ${{ github.event.inputs.chunk }}.msh
 
       - name: Upload sketch
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}_sketch
-          path: ${{ github.event.inputs.chunk }}_${{ github.event.inputs.version }}.msh
+          name: ${{ github.event.inputs.chunk }}_sketch
+          path: ${{ github.event.inputs.chunk }}.msh
+          overwrite: true
