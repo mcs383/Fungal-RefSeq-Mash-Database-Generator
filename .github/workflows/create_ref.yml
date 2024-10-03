@@ -42,7 +42,9 @@ jobs:
           echo "There are ${genomes} genomes"
           head -n 25 ids.txt > ids.tmp
           mv ids.tmp ids.txt
-          #if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
+          
+          
+  #if [ $genomes -lt 19700 ] ; then cd doesntexist ; fi
 
       - name: split file
         run: |
