@@ -13,6 +13,13 @@ jobs:
   download_and_sketch:
     runs-on: ubuntu-20.04
     steps:
+      - name: Download the ids
+        uses: actions/download-artifact@main
+        with:
+          name: genome-split-files
+          github-token: ${{ secrets.GH_PAT }}
+          repository: erinyoung/update_mash_dist
+      
       - name: Download Datasets and Dataformat
         run: |
           wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
@@ -25,13 +32,6 @@ jobs:
           tar -xvf mash-Linux64-v2.3.tar
           rm -rf mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
-
-      - name: Download the artifact
-        uses: actions/download-artifact@main
-        with:
-          name: genome-split-files
-          path: ./reference_files
-          github-token: ${{ secrets.GH_PAT }}
 
       - name: Check downloaded files
         run: ls -l ./reference_files
