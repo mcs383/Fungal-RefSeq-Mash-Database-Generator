@@ -60,7 +60,7 @@ jobs:
               j=2
               date
               echo "downloading $id $ge $sp genome"
-              datasets download genome accession $id --no-progressbar || { date ; echo "Couldn't download. Sleeping and tyring again" ; sleep 15s ; j=0 }
+              datasets download genome accession $id --no-progressbar || ( date ; echo "Could not download. Sleeping and trying again" ; sleep 15s ; j=0 )
             done
 
             date
