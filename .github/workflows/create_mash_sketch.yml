@@ -55,7 +55,7 @@ jobs:
             if [ ! -n "$sp" ] ; then sp="unknown" ; fi
             
             j=0
-            while [ $j < 1 ]
+            while [ $j -lt 1 ]
             do
               j=2
               date
