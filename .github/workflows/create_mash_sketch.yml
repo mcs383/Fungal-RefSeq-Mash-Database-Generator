@@ -57,10 +57,9 @@ jobs:
             j=0
             while [ $j -lt 1 ]
             do
-              j=2
               date
               echo "downloading $id $ge $sp genome"
-              datasets download genome accession $id --no-progressbar || ( date ; echo "Could not download. Sleeping and trying again" ; sleep 15s ; j=0 )
+              ( datasets download genome accession $id --no-progressbar && j=2 ) || ( date ; echo "Could not download. Sleeping and trying again" ; sleep 15s ; j=0 )
             done
 
             date
