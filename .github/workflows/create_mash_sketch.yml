@@ -59,7 +59,14 @@ jobs:
             do
               date
               echo "downloading $id $ge $sp genome"
-              ( datasets download genome accession $id --no-progressbar && j=2 ) || ( date ; echo "Could not download. Sleeping and trying again" ; sleep 15s ; j=0 )
+              if datasets download genome accession $id --no-progressbar
+              then
+                j=2
+              else
+                date
+                echo "Could not download. Sleeping and trying again"
+                sleep 15s
+              fi
             done
 
             date
