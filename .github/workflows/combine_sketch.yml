@@ -143,7 +143,7 @@ jobs:
 
       - name: Create LFS tracked file
         run: |
-          git lfs track data/RefSeqSketches_*msh
+          git lfs track data/RefSeqSketches_*msh.gz
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@main
