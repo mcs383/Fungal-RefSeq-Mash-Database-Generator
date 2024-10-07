@@ -141,6 +141,10 @@ jobs:
       - name: Remove Mash
         run: rm -rf mash
 
+      - name: Create LFS tracked file
+        run: |
+          git lfs track data/RefSeqSketches_*msh
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@main
         with:
