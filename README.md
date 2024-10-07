@@ -1,3 +1,7 @@
+# WARNING : STILL A WORK IN PROGRESS
+
+This repo was only made public for the github action limits.
+
 # Creating a MASH Reference
 
 The mash reference that can be downloaded from [the mash documentaion](https://mash.readthedocs.io/en/latest/data.html) is for RefSeq version 70.
