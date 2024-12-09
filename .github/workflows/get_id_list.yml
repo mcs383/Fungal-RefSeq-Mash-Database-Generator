@@ -39,10 +39,6 @@ jobs:
         run: |
           cat data/include_anyway.txt | awk '{print $1 "\t" $2 " " $3 }' >> ids.txt
 
-          cat ids.txt | sort > ids.txt.sorted
-
-          mv ids.txt.sorted ids.txt
-
       - name: check size
         run: |
           genomes=$(wc -l ids.txt | awk '{print $1}')
