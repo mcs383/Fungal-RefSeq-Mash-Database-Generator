@@ -14,7 +14,7 @@ run-name: Create sketch for chunk ${{ github.event.inputs.chunk }} from ${{ gith
 
 jobs:          
   download_and_sketch:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Download the ids
         uses: actions/download-artifact@v4
