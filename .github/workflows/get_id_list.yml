@@ -72,7 +72,7 @@ jobs:
 
   update_repo:
     needs:  list_reference_genomes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check Out Repository
         uses: actions/checkout@master
