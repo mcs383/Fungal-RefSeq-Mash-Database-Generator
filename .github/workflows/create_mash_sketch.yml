@@ -24,79 +24,70 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.event.inputs.run }}
       
-      - name: Download Datasets and Dataformat
+      - name: Download Tools
         run: |
           wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
-          wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/dataformat
-          chmod +x datasets dataformat
-
-      - name: Download Mash version 2.3
-        run: |
+          chmod +x datasets
           wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
           tar -xvf mash-Linux64-v2.3.tar
           rm -rf mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
 
-      - name: Check files
-        run: ls 
-
-      - name: work some magic
+      - name: Download, Sketch, and Paste
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
           mkdir tmp
           cd tmp
           
-          while read line
-          do
-            id=$(echo $line | awk '{print $1}')
-            ge=$(echo $line | awk '{print $2}')
-            if [ ! -n "$ge" ] ; then ge="unknown" ; fi
-            sp=$(echo $line | awk '{print $3}')
-            if [ ! -n "$sp" ] ; then sp="unknown" ; fi
+          # === CORRECTED LOOP STRUCTURE ===
+          # This robust loop prevents commands inside from consuming the input file.
+          while IFS= read -r line <&3; do
+            id=$(echo "$line" | awk '{print $1}')
             
-            j=0
-            while [ $j -lt 1 ]
-            do
-              date
-              echo "downloading $id $ge $sp genome"
-              if datasets download genome accession $id --no-progressbar
-              then
-                j=2
-              else
-                date
-                echo "Could not download. Sleeping and trying again"
-                sleep 15s
+            echo "--- Downloading $id ---"
+            # Retry download up to 3 times
+            success=false
+            for i in 1 2 3; do
+              if datasets download genome accession "$id" --no-progressbar --filename ../ncbi_dataset.zip; then
+                success=true
+                break
               fi
+              echo "Download failed. Retrying in 15 seconds..."
+              sleep 15
             done
 
-            date
-            echo "download complete!"
-            echo "copying file"
-            unzip ncbi_dataset.zip
-            cp ncbi_dataset/data/*/*_genomic.fna ${ge}_${sp}_${id}.fasta
+            if ! $success; then
+              echo "ERROR: Failed to download $id after 3 attempts. Skipping."
+              continue
+            fi
 
-            date
-            if [ ! -f "final.msh" ]
-            then
-              echo "creating initial mash sketch"
-              mash sketch ${ge}_${sp}_${id}.fasta -o final
+            echo "Unzipping and copying..."
+            unzip -o ../ncbi_dataset.zip
+            
+            # Find and copy the fasta file
+            fasta_file=$(find ncbi_dataset/data -name "*_genomic.fna")
+            if [ -z "$fasta_file" ]; then
+                echo "ERROR: Could not find .fna file for $id. Skipping."
+                rm -rf ncbi_dataset ncbi_dataset.zip README.md
+                continue
+            fi
+            cp "$fasta_file" "genome.fasta"
+
+            if [ ! -f "final.msh" ]; then
+              echo "Creating initial mash sketch..."
+              mash sketch "genome.fasta" -o final -k 21 -s 1000
             else
-              echo "creating mash sketch"
-              mash sketch ${ge}_${sp}_${id}.fasta -o sample
+              echo "Sketching and pasting..."
+              mash sketch "genome.fasta" -o sample -k 21 -s 1000
               mv final.msh tmp.msh
-
-              date
-              echo "pasting mash sketches"
               mash paste final tmp.msh sample.msh
               rm tmp.msh sample.msh
             fi
-
-            ls -alh final.msh
-
-            date
-            echo "sketching complete! removing extra files"
-            rm -rf ${ge}_${sp}_${id}.fasta ncbi_dataset/ ncbi_dataset.zip README.md md5sum.txt
-          done < ../x${{ github.event.inputs.chunk }}.txt
+            
+            echo "Cleaning up files for $id..."
+            rm -rf genome.fasta ncbi_dataset ncbi_dataset.zip README.md
+            
+          done 3< ../x${{ github.event.inputs.chunk }}.txt
 
           mv final.msh ${{ github.event.inputs.chunk }}.msh
 
