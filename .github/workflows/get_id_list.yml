@@ -85,7 +85,7 @@ jobs:
         uses: peter-evans/create-pull-request@main
         with:
             commit-message: Update fungal ID list
-            title: Update fungal ID list with latest from RefSeq
+            title: Updated fungal ID list with latest from RefSeq
             body: |
               - new ids.txt  of fungal ids
   
