@@ -173,11 +173,19 @@ jobs:
           rm tmp.zip
         done < artifact_names.txt
 
-    - name: Download all chunk logs
-      uses: actions/download-artifact@v4
-      with:
-        name: chunk-log-*
-        path: chunk_logs/
+    - name: Download all chunk logs (robust)
+      env:
+    GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p chunk_logs
+        gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq '.artifacts[].name' | grep '^chunk-log-' > chunk_log_names.txt
+        while read name; do
+          id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq ".artifacts[] | select(.name==\"$name\") | .id")
+          gh api -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/actions/artifacts/$id/zip > tmp_log.zip
+          unzip -o tmp_log.zip -d chunk_logs/
+          rm tmp_log.zip
+        done < chunk_log_names.txt
 
     - name: Combine all sketches
       run: |
