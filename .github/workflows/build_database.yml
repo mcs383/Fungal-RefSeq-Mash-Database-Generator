@@ -7,8 +7,6 @@ on:
         description: 'Enter the RefSeq version (e.g., v230, v231)'
         required: true
 
-run-name: Build Fungal RefSeq Mash Database
-
 jobs:
   # --------------------------------------------------------------------------
   # JOB 1: Get the list of all fungal genomes from NCBI
@@ -19,7 +17,7 @@ jobs:
       genome_count: ${{ steps.check_size.outputs.count }}
     steps:
       - name: Check Out Repository
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
 
       - name: Download NCBI Datasets Tool
         run: |
@@ -43,7 +41,7 @@ jobs:
         run: |
           # We'll split into 10 chunks for the matrix
           split -n l/10 ids.tsv -d --additional-suffix=.tsv x
-      
+
       - name: Upload list chunks for next job
         uses: actions/upload-artifact@v4
         with:
@@ -73,7 +71,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: genome-chunks
-      
+
       - name: Download, Sketch, and Paste (Chunk ${{ matrix.chunk }})
         run: |
           set -euo pipefail
@@ -149,42 +147,42 @@ jobs:
   # --------------------------------------------------------------------------
   # JOB 3: Combine all partial sketches into the final database
   # --------------------------------------------------------------------------
- combine_sketches:
-  needs: create_sketches
-  runs-on: ubuntu-latest
-  env:
-    REFSEQ_VERSION: ${{ github.event.inputs.refseq_version }}
-  steps:
-  
-    - name: Download Mash
-      run: |
-        wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
-        tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
-        
-    - name: Download all partial sketch artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: partial-sketch-*
-        path: partial_sketches/
-        
-    - name: Download all chunk logs
-      uses: actions/download-artifact@v4
-      with:
-        name: chunk-log-*
-        path: chunk_logs/
-        
-    - name: Combine all sketches
-      run: |
-        export PATH=$(pwd):$PATH
-        echo "Pasting all partial sketches..."
-        mash paste Fungi_RefSeq_${REFSEQ_VERSION}.msh $(find partial_sketches -name "*.msh")
-        
-    - name: Compress final sketch
-      run: gzip Fungi_RefSeq_${REFSEQ_VERSION}.msh
-      
-    - name: Create Release and Upload Final Sketch
-      uses: softprops/action-gh-release@v2
-      with:
-        name: Fungal RefSeq Database ${{ env.REFSEQ_VERSION }}
-        tag_name: v1.0.0
-        files: Fungi_RefSeq_${{ env.REFSEQ_VERSION }}.msh.gz
+  combine_sketches:
+    needs: create_sketches
+    runs-on: ubuntu-latest
+    env:
+      REFSEQ_VERSION: ${{ github.event.inputs.refseq_version }}
+    steps:
+
+      - name: Download Mash
+        run: |
+          wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
+
+      - name: Download all partial sketch artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: partial-sketch-*
+          path: partial_sketches/
+
+      - name: Download all chunk logs
+        uses: actions/download-artifact@v4
+        with:
+          name: chunk-log-*
+          path: chunk_logs/
+
+      - name: Combine all sketches
+        run: |
+          export PATH=$(pwd):$PATH
+          echo "Pasting all partial sketches..."
+          mash paste Fungi_RefSeq_${REFSEQ_VERSION}.msh $(find partial_sketches -name "*.msh")
+
+      - name: Compress final sketch
+        run: gzip Fungi_RefSeq_${REFSEQ_VERSION}.msh
+
+      - name: Create Release and Upload Final Sketch
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Fungal RefSeq Database ${{ env.REFSEQ_VERSION }}
+          tag_name: v1.0.0
+          files: Fungi_RefSeq_${{ env.REFSEQ_VERSION }}.msh.gz
