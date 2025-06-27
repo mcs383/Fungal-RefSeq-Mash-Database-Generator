@@ -175,7 +175,7 @@ jobs:
 
     - name: Download all chunk logs (robust)
       env:
-    GH_TOKEN: ${{ github.token }}
+        GH_TOKEN: ${{ github.token }}
       run: |
         mkdir -p chunk_logs
         gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq '.artifacts[].name' | grep '^chunk-log-' > chunk_log_names.txt
