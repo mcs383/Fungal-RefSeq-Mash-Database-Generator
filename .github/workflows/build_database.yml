@@ -154,35 +154,43 @@ jobs:
       REFSEQ_VERSION: ${{ github.event.inputs.refseq_version }}
     steps:
 
-      - name: Download Mash
-        run: |
-          wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
-          tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
+    - name: Download Mash
+      run: |
+        wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+        tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
 
-      - name: Download all partial sketch artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: partial-sketch-*
-          path: partial_sketches/
+    - name: Download all partial-sketch artifacts (robust)
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p partial_sketches
+        gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq '.artifacts[].name' | grep '^partial-sketch-' > artifact_names.txt
+        while read name; do
+          id=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts --jq ".artifacts[] | select(.name==\"$name\") | .id")
+          gh api -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/actions/artifacts/$id/zip > tmp.zip
+          unzip -o tmp.zip -d partial_sketches/
+          rm tmp.zip
+        done < artifact_names.txt
 
-      - name: Download all chunk logs
-        uses: actions/download-artifact@v4
-        with:
-          name: chunk-log-*
-          path: chunk_logs/
+    - name: Download all chunk logs
+      uses: actions/download-artifact@v4
+      with:
+        name: chunk-log-*
+        path: chunk_logs/
 
-      - name: Combine all sketches
-        run: |
-          export PATH=$(pwd):$PATH
-          echo "Pasting all partial sketches..."
-          mash paste Fungi_RefSeq_${REFSEQ_VERSION}.msh $(find partial_sketches -name "*.msh")
+    - name: Combine all sketches
+      run: |
+        export PATH=$(pwd):$PATH
+        echo "Pasting all partial sketches..."
+        mash paste Fungi_RefSeq_${REFSEQ_VERSION}.msh $(find partial_sketches -name "*.msh")
 
-      - name: Compress final sketch
-        run: gzip Fungi_RefSeq_${REFSEQ_VERSION}.msh
+    - name: Compress final sketch
+      run: gzip Fungi_RefSeq_${REFSEQ_VERSION}.msh
 
-      - name: Create Release and Upload Final Sketch
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Fungal RefSeq Database ${{ env.REFSEQ_VERSION }}
-          tag_name: v1.0.0
-          files: Fungi_RefSeq_${{ env.REFSEQ_VERSION }}.msh.gz
+    - name: Create Release and Upload Final Sketch
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Fungal RefSeq Database ${{ env.REFSEQ_VERSION }}
+        tag_name: v1.0.0
+        files: Fungi_RefSeq_${{ env.REFSEQ_VERSION }}.msh.gz
