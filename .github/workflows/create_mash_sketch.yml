@@ -16,12 +16,10 @@ jobs:
   download_and_sketch:
     runs-on: ubuntu-latest
     steps:
-      - name: Download the ids
+      - name: Download the id chunk file
         uses: actions/download-artifact@v4
         with:
           name: genome-split-files
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
           run-id: ${{ github.event.inputs.run }}
       
       - name: Download Tools
@@ -30,68 +28,58 @@ jobs:
           chmod +x datasets
           wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
           tar -xvf mash-Linux64-v2.3.tar
-          rm -rf mash-Linux64-v2.3.tar
+          rm mash-Linux64-v2.3.tar
           mv mash-Linux64-v2.3 mash
 
-      - name: Download, Sketch, and Paste
+      - name: Download, Sketch, and Paste Genomes
         run: |
           export PATH=$(pwd):$(pwd)/mash:$PATH
-          mkdir tmp
+          mkdir -p tmp
           cd tmp
           
-          # === CORRECTED LOOP STRUCTURE ===
-          # This robust loop prevents commands inside from consuming the input file.
-          while IFS= read -r line <&3; do
-            id=$(echo "$line" | awk '{print $1}')
-            
-            echo "--- Downloading $id ---"
-            # Retry download up to 3 times
-            success=false
-            for i in 1 2 3; do
-              if datasets download genome accession "$id" --no-progressbar --filename ../ncbi_dataset.zip; then
-                success=true
-                break
-              fi
-              echo "Download failed. Retrying in 15 seconds..."
-              sleep 15
-            done
+          # This robust loop correctly reads tab-separated accessions and full organism names
+          while IFS=$'\t' read -r accession organism_name; do
+            # Skip empty lines
+            if [ -z "$accession" ]; then continue; fi
 
-            if ! $success; then
-              echo "ERROR: Failed to download $id after 3 attempts. Skipping."
+            echo "--- Downloading $accession ($organism_name) ---"
+            
+            # Download the genome
+            if ! datasets download genome accession "$accession" --no-progressbar --filename ../ncbi_dataset.zip; then
+              echo "ERROR: Failed to download $accession. Skipping."
               continue
             fi
 
-            echo "Unzipping and copying..."
-            unzip -o ../ncbi_dataset.zip
-            
-            # Find and copy the fasta file
+            # Unzip and find the fasta file
+            unzip -q -o ../ncbi_dataset.zip
             fasta_file=$(find ncbi_dataset/data -name "*_genomic.fna")
-            if [ -z "$fasta_file" ]; then
-                echo "ERROR: Could not find .fna file for $id. Skipping."
+
+            if [ -z "$fasta_file" ] || [ ! -f "$fasta_file" ]; then
+                echo "ERROR: Could not find .fna file for $accession. Skipping."
                 rm -rf ncbi_dataset ncbi_dataset.zip README.md
                 continue
             fi
-            cp "$fasta_file" "genome.fasta"
+            
+            # Sketch the single genome
+            mash sketch -k 21 -s 1000 -o single.msh "$fasta_file"
 
-            if [ ! -f "final.msh" ]; then
-              echo "Creating initial mash sketch..."
-              mash sketch "genome.fasta" -o final -k 21 -s 1000
+            # If this is the first sketch, it becomes the main one. Otherwise, paste into it.
+            if [ ! -f "final_chunk.msh" ]; then
+              mv single.msh final_chunk.msh
             else
-              echo "Sketching and pasting..."
-              mash sketch "genome.fasta" -o sample -k 21 -s 1000
-              mv final.msh tmp.msh
-              mash paste final tmp.msh sample.msh
-              rm tmp.msh sample.msh
+              mash paste -l final_chunk single.msh > combined.msh
+              mv combined.msh final_chunk.msh
             fi
             
-            echo "Cleaning up files for $id..."
-            rm -rf genome.fasta ncbi_dataset ncbi_dataset.zip README.md
+            echo "Cleaning up files for $accession..."
+            rm -rf ncbi_dataset ncbi_dataset.zip README.md single.msh
             
-          done 3< ../x${{ github.event.inputs.chunk }}.txt
+          done < ../x${{ github.event.inputs.chunk }}.txt
 
-          mv final.msh ${{ github.event.inputs.chunk }}.msh
+          # Rename the final sketch for this chunk
+          mv final_chunk.msh ${{ github.event.inputs.chunk }}.msh
 
-      - name: Upload sketch
+      - name: Upload chunk sketch
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.chunk }}_sketch
