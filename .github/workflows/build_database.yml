@@ -2,6 +2,10 @@ name: Build Fungal RefSeq Database
 
 on:
   workflow_dispatch:
+    inputs:
+      refseq_version:
+        description: 'Enter the RefSeq version (e.g., v230, v231)'
+        required: true
 
 run-name: Build Fungal RefSeq Mash Database
 
@@ -178,6 +182,6 @@ jobs:
       - name: Create Release and Upload Final Sketch
         uses: softprops/action-gh-release@v2
         with:
-          name: Fungal RefSeq Database v230
+          name: Fungal RefSeq Database ${{ env.REFSEQ_VERSION }}
           tag_name: v1.0.0
-          files: Fungi_RefSeq_v230.msh.gz
+          files: Fungi_RefSeq_${{ env.REFSEQ_VERSION }}.msh.gz
