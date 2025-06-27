@@ -48,7 +48,7 @@ jobs:
           overwrite: true
 
   # --------------------------------------------------------------------------
-  # JOB 2: Create sketches for each chunk in parallel (Disk-Efficient Version)
+  # JOB 2: Create sketches for each chunk in parallel (Definitive Version)
   # --------------------------------------------------------------------------
   create_sketches:
     needs: list_genomes
@@ -91,7 +91,7 @@ jobs:
                 success=true
                 break
               fi
-              echo "Download attempt $i failed. Waiting 15s to retry..."
+              echo "Download attempt $i failed. Retrying in 15s..."
               sleep 15
             done
 
@@ -110,18 +110,23 @@ jobs:
                 continue
             fi
             
-            # Sketch the single genome and paste it into the growing combined sketch
+            # === CORRECTED MASH PASTE LOGIC ===
+            # Sketch the single genome into a temporary file
+            mash sketch -k 21 -s 1000 -p 8 -o single.msh "$fasta_file"
+            
+            # If the final chunk sketch doesn't exist, this is the first genome.
+            # Rename the single sketch to be the final one.
             if [ ! -f "$OUTPUT_SKETCH" ]; then
               echo "Creating initial sketch for this chunk..."
-              mash sketch -k 21 -s 1000 -p 8 -o "$OUTPUT_SKETCH" "$fasta_file"
+              mv single.msh "$OUTPUT_SKETCH"
             else
+              # If it exists, 'paste' the new single sketch into the main one.
               echo "Pasting new sketch into chunk..."
-              mash sketch -k 21 -s 1000 -p 8 -o single.msh "$fasta_file"
-              mash paste -l "$OUTPUT_SKETCH" single.msh > combined.msh
+              mash paste -l "$OUTPUT_SKETCH" "$OUTPUT_SKETCH" single.msh > combined.msh
               mv combined.msh "$OUTPUT_SKETCH"
             fi
             
-            # CRITICAL STEP: Clean up this genome's files before starting the next loop
+            # CRITICAL STEP: Clean up this genome's files before next loop
             echo "Cleaning up files for $accession..."
             rm -rf genome_data genome.zip single.msh
             
