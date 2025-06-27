@@ -70,7 +70,7 @@ jobs:
         with:
           name: genome-chunks
       
-      - name: Download, Sketch, and Paste (Chunk ${{ matrix.chunk }})
+      - name: Download, Unzip, Sketch, and Paste (Chunk ${{ matrix.chunk }})
         run: |
           export PATH=$(pwd):$PATH
           INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
@@ -78,17 +78,27 @@ jobs:
 
           echo "Processing ${INPUT_FILE}..."
           
-          # Create sketches for all genomes in the chunk and then paste them together
-          # This is more efficient than the previous iterative paste
-          mkdir -p genomes
+          # Download all genomes for this chunk
+          mkdir -p genomes_zip
           while IFS=$'\t' read -r accession organism_name; do
             if [ -z "$accession" ]; then continue; fi
             echo "Downloading $accession"
-            datasets download genome accession "$accession" --no-progressbar --filename "genomes/${accession}.zip"
+            datasets download genome accession "$accession" --no-progressbar --filename "genomes_zip/${accession}.zip"
           done < "$INPUT_FILE"
           
-          echo "Sketching all downloaded genomes for this chunk..."
-          mash sketch -k 21 -s 1000 -p 8 -o "$OUTPUT_SKETCH" genomes/*.zip
+          # === NEW STEP: Unzip all downloaded files ===
+          echo "Unzipping all downloaded genomes..."
+          mkdir -p genomes_fna
+          for zipfile in genomes_zip/*.zip; do
+            unzip -q -o "$zipfile" -d "unzipped_tmp"
+            # Find the actual fasta file and move it to our clean directory
+            find unzipped_tmp/ncbi_dataset/data -name "*.fna" -exec mv {} genomes_fna/ \;
+            rm -rf unzipped_tmp
+          done
+          
+          echo "Sketching all genomes for this chunk..."
+          # Now, sketch the directory of .fna files
+          mash sketch -k 21 -s 1000 -p 8 -o "$OUTPUT_SKETCH" genomes_fna/*.fna
 
       - name: Upload partial sketch artifact
         uses: actions/upload-artifact@v4
