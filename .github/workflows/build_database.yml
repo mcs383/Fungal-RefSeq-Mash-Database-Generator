@@ -1,0 +1,133 @@
+name: Build Fungal RefSeq Database
+
+on:
+  workflow_dispatch:
+
+run-name: Build Fungal RefSeq Mash Database
+
+jobs:
+  # --------------------------------------------------------------------------
+  # JOB 1: Get the list of all fungal genomes from NCBI
+  # --------------------------------------------------------------------------
+  list_genomes:
+    runs-on: ubuntu-latest
+    outputs:
+      genome_count: ${{ steps.check_size.outputs.count }}
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@master
+
+      - name: Download NCBI Datasets Tool
+        run: |
+          wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          chmod +x datasets
+
+      - name: Get Fungal Genome List
+        run: |
+          export PATH=$(pwd):$PATH
+          datasets summary genome taxon 4751 --reference --as-json-lines | \
+          jq -r '[.accession, .organism.organism_name] | @tsv' > ids.tsv
+
+      - name: Check list size
+        id: check_size
+        run: |
+          count=$(wc -l < ids.tsv)
+          echo "Found ${count} fungal genomes."
+          echo "count=${count}" >> $GITHUB_OUTPUT
+
+      - name: Split id list for parallel jobs
+        run: |
+          # We'll split into 10 chunks for the matrix
+          split -n l/10 ids.tsv -d --additional-suffix=.tsv x
+      
+      - name: Upload list chunks for next job
+        uses: actions/upload-artifact@v4
+        with:
+          name: genome-chunks
+          path: x*.tsv
+          overwrite: true
+
+  # --------------------------------------------------------------------------
+  # JOB 2: Create sketches for each chunk in parallel
+  # --------------------------------------------------------------------------
+  create_sketches:
+    needs: list_genomes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # This creates a 10-job parallel matrix, for chunks 0 through 9
+        chunk: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    steps:
+      - name: Download Tools
+        run: |
+          wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
+          chmod +x datasets
+          wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
+
+      - name: Download genome chunk artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: genome-chunks
+      
+      - name: Download, Sketch, and Paste (Chunk ${{ matrix.chunk }})
+        run: |
+          export PATH=$(pwd):$PATH
+          INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
+          OUTPUT_SKETCH="chunk_${{ matrix.chunk }}.msh"
+
+          echo "Processing ${INPUT_FILE}..."
+          
+          # Create sketches for all genomes in the chunk and then paste them together
+          # This is more efficient than the previous iterative paste
+          mkdir -p genomes
+          while IFS=$'\t' read -r accession organism_name; do
+            if [ -z "$accession" ]; then continue; fi
+            echo "Downloading $accession"
+            datasets download genome accession "$accession" --no-progressbar --filename "genomes/${accession}.zip"
+          done < "$INPUT_FILE"
+          
+          echo "Sketching all downloaded genomes for this chunk..."
+          mash sketch -k 21 -s 1000 -p 8 -o "$OUTPUT_SKETCH" genomes/*.zip
+
+      - name: Upload partial sketch artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partial-sketch-${{ matrix.chunk }}
+          path: ${{ env.OUTPUT_SKETCH }}
+          overwrite: true
+
+  # --------------------------------------------------------------------------
+  # JOB 3: Combine all partial sketches into the final database
+  # --------------------------------------------------------------------------
+  combine_sketches:
+    needs: create_sketches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Mash
+        run: |
+          wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
+          tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
+      
+      - name: Download all partial sketch artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: partial-sketch-* # This wildcard downloads all artifacts starting with 'partial-sketch-'
+          path: partial_sketches/
+
+      - name: Combine all sketches
+        run: |
+          export PATH=$(pwd):$PATH
+          echo "Pasting all partial sketches..."
+          # The find command below is robust and handles the directory structure
+          mash paste Fungi_RefSeq_v230.msh $(find partial_sketches -name "*.msh")
+      
+      - name: Compress final sketch
+        run: gzip Fungi_RefSeq_v230.msh
+
+      - name: Create Release and Upload Final Sketch
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Fungal RefSeq Database v230
+          tag_name: v1.0.0
+          files: Fungi_RefSeq_v230.msh.gz
