@@ -25,7 +25,7 @@ jobs:
       - name: Get Fungal Genome List
         run: |
           export PATH=$(pwd):$PATH
-          datasets summary genome taxon 4751 --reference --as-json-lines | \
+          ./datasets summary genome taxon 4751 --reference --as-json-lines | \
           jq -r '[.accession, .organism.organism_name] | @tsv' > ids.tsv
 
       - name: Check list size
@@ -72,72 +72,75 @@ jobs:
       
       - name: Download, Sketch, and Paste (Chunk ${{ matrix.chunk }})
         run: |
+          set -euo pipefail
           export PATH=$(pwd):$PATH
           INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
           OUTPUT_SKETCH="chunk_${{ matrix.chunk }}.msh"
-
-          echo "Processing ${INPUT_FILE} one genome at a time..."
-          
-          # This robust loop processes one genome at a time to conserve disk space
+          LOG="chunk_${{ matrix.chunk }}.log"
+          touch "$LOG"
+          echo "Processing ${INPUT_FILE} one genome at a time..." | tee -a "$LOG"
+          processed=0
           while IFS=$'\t' read -r accession organism_name; do
-            if [ -z "$accession" ]; then continue; fi
-
-            echo "--- Downloading $accession ---"
-            
-            # Retry loop for downloading
+            [ -z "$accession" ] && continue
+            echo "--- Downloading $accession ---" | tee -a "$LOG"
             success=false
             for i in 1 2 3; do
-              if datasets download genome accession "$accession" --no-progressbar --filename "genome.zip"; then
+              if ./datasets download genome accession "$accession" --no-progressbar --filename "genome.zip"; then
                 success=true
                 break
               fi
-              echo "Download attempt $i failed. Retrying in 15s..."
+              echo "Download attempt $i failed. Retrying in 15s..." | tee -a "$LOG"
               sleep 15
             done
-
             if ! $success; then
-              echo "ERROR: Failed to download $accession after 3 attempts. Skipping."
+              echo "ERROR: Failed to download $accession after 3 attempts. Skipping." | tee -a "$LOG"
               continue
             fi
-
-            # Unzip and find the fasta file
             unzip -q -o genome.zip -d genome_data
             fasta_file=$(find genome_data/ncbi_dataset/data -name "*.fna")
-
             if [ -z "$fasta_file" ] || [ ! -f "$fasta_file" ]; then
-                echo "ERROR: Could not find .fna file for $accession. Skipping."
-                rm -rf genome_data genome.zip
-                continue
+              echo "ERROR: Could not find .fna file for $accession. Skipping." | tee -a "$LOG"
+              rm -rf genome_data genome.zip
+              continue
             fi
-            
-            # === CORRECTED MASH PASTE LOGIC ===
-            # Sketch the single genome into a temporary file
-            mash sketch -k 21 -s 1000 -p 8 -o single.msh "$fasta_file"
-            
-            # If the final chunk sketch doesn't exist, this is the first genome.
-            # Rename the single sketch to be the final one.
+            if ! ./mash sketch -k 21 -s 1000 -p 8 -o single.msh "$fasta_file" >>"$LOG" 2>&1; then
+              echo "ERROR: mash sketch failed for $accession. Skipping." | tee -a "$LOG"
+              rm -rf genome_data genome.zip single.msh
+              continue
+            fi
             if [ ! -f "$OUTPUT_SKETCH" ]; then
-              echo "Creating initial sketch for this chunk..."
               mv single.msh "$OUTPUT_SKETCH"
             else
-              # If it exists, 'paste' the new single sketch into the main one.
-              echo "Pasting new sketch into chunk..."
-              mash paste -l "$OUTPUT_SKETCH" "$OUTPUT_SKETCH" single.msh > combined.msh
+              if ! ./mash paste -l "$OUTPUT_SKETCH" "$OUTPUT_SKETCH" single.msh > combined.msh 2>>"$LOG"; then
+                echo "ERROR: mash paste failed. Skipping $accession." | tee -a "$LOG"
+                rm -rf genome_data genome.zip single.msh combined.msh
+                continue
+              fi
               mv combined.msh "$OUTPUT_SKETCH"
+              rm single.msh
             fi
-            
-            # CRITICAL STEP: Clean up this genome's files before next loop
-            echo "Cleaning up files for $accession..."
-            rm -rf genome_data genome.zip single.msh
-            
+            processed=$((processed+1))
+            rm -rf genome_data genome.zip
           done < "$INPUT_FILE"
+          echo "Processed $processed genomes." | tee -a "$LOG"
+          if [ ! -f "$OUTPUT_SKETCH" ] || [ ! -s "$OUTPUT_SKETCH" ]; then
+            echo "No sketch built for chunk ${{ matrix.chunk }}. Exiting with error." | tee -a "$LOG"
+            exit 1
+          fi
 
       - name: Upload partial sketch artifact
         uses: actions/upload-artifact@v4
         with:
           name: partial-sketch-${{ matrix.chunk }}
-          path: ${{ env.OUTPUT_SKETCH }}
+          path: chunk_${{ matrix.chunk }}.msh
           overwrite: true
+
+      - name: Upload chunk log (always)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chunk-log-${{ matrix.chunk }}
+          path: chunk_${{ matrix.chunk }}.log
 
   # --------------------------------------------------------------------------
   # JOB 3: Combine all partial sketches into the final database
@@ -154,16 +157,21 @@ jobs:
       - name: Download all partial sketch artifacts
         uses: actions/download-artifact@v4
         with:
-          name: partial-sketch-* # This wildcard downloads all artifacts starting with 'partial-sketch-'
+          name: partial-sketch-*
           path: partial_sketches/
+  
+      - name: Download all chunk logs
+        uses: actions/download-artifact@v4
+        with:
+          name: chunk-log-*
+          path: chunk_logs/
 
       - name: Combine all sketches
         run: |
           export PATH=$(pwd):$PATH
           echo "Pasting all partial sketches..."
-          # The find command below is robust and handles the directory structure
           mash paste Fungi_RefSeq_v230.msh $(find partial_sketches -name "*.msh")
-      
+
       - name: Compress final sketch
         run: gzip Fungi_RefSeq_v230.msh
 
