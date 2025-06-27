@@ -78,16 +78,31 @@ jobs:
 
           echo "Processing ${INPUT_FILE}..."
           
-          # Download all genomes for this chunk
           mkdir -p genomes_zip
           while IFS=$'\t' read -r accession organism_name; do
             if [ -z "$accession" ]; then continue; fi
-            echo "Downloading $accession"
-            datasets download genome accession "$accession" --no-progressbar --filename "genomes_zip/${accession}.zip"
+            
+            # === NEW RETRY LOOP LOGIC ===
+            success=false
+            for i in 1 2 3; do
+              echo "Attempt $i to download $accession..."
+              if datasets download genome accession "$accession" --no-progressbar --filename "genomes_zip/${accession}.zip"; then
+                success=true
+                break # Exit the retry loop on success
+              fi
+              echo "Download attempt $i failed, likely a timeout. Waiting 15 seconds before retrying..."
+              sleep 15
+            done
+
+            if ! $success; then
+              echo "ERROR: Permanently failed to download $accession after 3 attempts. Skipping this genome."
+              continue # Move to the next genome in the list
+            fi
+            # === END OF RETRY LOOP LOGIC ===
+
           done < "$INPUT_FILE"
           
-          # === NEW STEP: Unzip all downloaded files ===
-          echo "Unzipping all downloaded genomes..."
+          echo "Unzipping all downloaded genomes for this chunk..."
           mkdir -p genomes_fna
           for zipfile in genomes_zip/*.zip; do
             unzip -q -o "$zipfile" -d "unzipped_tmp"
