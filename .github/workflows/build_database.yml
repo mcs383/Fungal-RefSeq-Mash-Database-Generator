@@ -49,7 +49,7 @@ jobs:
           overwrite: true
 
   # --------------------------------------------------------------------------
-  # JOB 2: Create sketches (Final Polite Version)
+  # JOB 2: Create sketches for each chunk in parallel (Final Disk-Efficient Version)
   # --------------------------------------------------------------------------
   create_sketches:
     needs: list_genomes
@@ -72,7 +72,7 @@ jobs:
         with:
           name: genome-chunks
       
-      - name: Download, Unzip, and Sketch Genomes (Chunk ${{ matrix.chunk }})
+      - name: Download, Sketch, and Paste (Chunk ${{ matrix.chunk }})
         run: |
           export PATH=$(pwd):$PATH
           INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
@@ -80,44 +80,58 @@ jobs:
 
           echo "Processing ${INPUT_FILE} one genome at a time..."
           
-          mkdir -p genomes_zip
-          
-          # === MODIFIED DOWNLOAD LOOP ===
-          # We will now loop and download one by one, with a short sleep.
-          # This is slower but much "nicer" to the NCBI servers and avoids timeouts.
+          # This robust loop processes one genome at a time to conserve disk space
           while IFS=$'\t' read -r accession organism_name; do
             if [ -z "$accession" ]; then continue; fi
-            echo "--- Downloading $accession ---"
+
+            echo "--- Processing $accession ---"
             
-            # Use a retry loop for robustness
+            # Use a temporary directory for each genome to keep things clean
+            mkdir -p temp_genome_files
+            
+            # Retry loop for downloading
             success=false
             for i in 1 2 3; do
-              if ./datasets download genome accession "$accession" --no-progressbar --filename "genomes_zip/${accession}.zip"; then
+              if ./datasets download genome accession "$accession" --no-progressbar --filename "temp_genome_files/genome.zip"; then
                 success=true
                 break
               fi
-              echo "Download attempt $i failed. Waiting 10s to retry..."
-              sleep 10
+              echo "Download attempt $i for $accession failed. Retrying in 15s..."
+              sleep 15
             done
 
             if ! $success; then
               echo "ERROR: Failed to download $accession after 3 attempts. Skipping."
+              rm -rf temp_genome_files
+              continue
             fi
-            # Be polite and wait a moment before the next download.
-            sleep 1
+
+            # Unzip and find the fasta file
+            unzip -q -o temp_genome_files/genome.zip -d temp_genome_files/unzipped
+            fasta_file=$(find temp_genome_files/unzipped -name "*.fna")
+
+            if [ -z "$fasta_file" ] || [ ! -f "$fasta_file" ]; then
+                echo "ERROR: Could not find .fna file for $accession. Skipping."
+                rm -rf temp_genome_files
+                continue
+            fi
+            
+            # Sketch the single genome
+            ./mash sketch -k 21 -s 1000 -p 8 -o temp_genome_files/single.msh "$fasta_file"
+            
+            # Iteratively paste into the main sketch file for this chunk
+            if [ ! -f "$OUTPUT_SKETCH" ]; then
+              mv temp_genome_files/single.msh "$OUTPUT_SKETCH"
+            else
+              mv "$OUTPUT_SKETCH" temp_chunk.msh
+              ./mash paste "$OUTPUT_SKETCH" temp_chunk.msh temp_genome_files/single.msh
+              rm temp_chunk.msh
+            fi
+            
+            # CRITICAL STEP: Clean up files before the next loop
+            rm -rf temp_genome_files
+            
           done < "$INPUT_FILE"
-          
-          # The rest of the script proceeds as before
-          echo "Unzipping all downloaded genomes..."
-          mkdir -p genomes_fna
-          for zipfile in genomes_zip/*.zip; do
-            unzip -q -o "$zipfile" -d "unzipped_tmp"
-            find unzipped_tmp/ncbi_dataset/data -name "*.fna" -exec mv {} genomes_fna/ \;
-            rm -rf unzipped_tmp
-          done
-          
-          echo "Sketching all genomes for this chunk..."
-          ./mash sketch -k 21 -s 1000 -p 8 -o "$OUTPUT_SKETCH" genomes_fna/*.fna
 
       - name: Upload partial sketch artifact
         uses: actions/upload-artifact@v4
