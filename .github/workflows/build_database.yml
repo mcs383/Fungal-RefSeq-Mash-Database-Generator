@@ -49,7 +49,7 @@ jobs:
           overwrite: true
 
   # --------------------------------------------------------------------------
-  # JOB 2: Create sketches for each chunk in parallel
+  # JOB 2: Create sketches (Final Polite Version)
   # --------------------------------------------------------------------------
   create_sketches:
     needs: list_genomes
@@ -78,11 +78,36 @@ jobs:
           INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
           OUTPUT_SKETCH="chunk_${{ matrix.chunk }}.msh"
 
-          echo "Processing ${INPUT_FILE}..."
+          echo "Processing ${INPUT_FILE} one genome at a time..."
+          
           mkdir -p genomes_zip
           
-          cat "$INPUT_FILE" | cut -f1 | xargs -n 1 -P 8 ./datasets download genome accession --no-progressbar --filename "genomes_zip/{}.zip"
+          # === MODIFIED DOWNLOAD LOOP ===
+          # We will now loop and download one by one, with a short sleep.
+          # This is slower but much "nicer" to the NCBI servers and avoids timeouts.
+          while IFS=$'\t' read -r accession organism_name; do
+            if [ -z "$accession" ]; then continue; fi
+            echo "--- Downloading $accession ---"
+            
+            # Use a retry loop for robustness
+            success=false
+            for i in 1 2 3; do
+              if ./datasets download genome accession "$accession" --no-progressbar --filename "genomes_zip/${accession}.zip"; then
+                success=true
+                break
+              fi
+              echo "Download attempt $i failed. Waiting 10s to retry..."
+              sleep 10
+            done
+
+            if ! $success; then
+              echo "ERROR: Failed to download $accession after 3 attempts. Skipping."
+            fi
+            # Be polite and wait a moment before the next download.
+            sleep 1
+          done < "$INPUT_FILE"
           
+          # The rest of the script proceeds as before
           echo "Unzipping all downloaded genomes..."
           mkdir -p genomes_fna
           for zipfile in genomes_zip/*.zip; do
