@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       refseq_version:
-        description: 'Enter the RefSeq version to use as a tag (e.g., v231)'
+        description: 'Enter the RefSeq version to use as a tag (e.g. v230, v231, etc.)'
         required: true
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
           overwrite: true
 
   # --------------------------------------------------------------------------
-  # JOB 2: Create sketches for each chunk in parallel (Final Disk-Efficient Version)
+  # JOB 2: Create sketches for each chunk in parallel
   # --------------------------------------------------------------------------
   create_sketches:
     needs: list_genomes
@@ -72,7 +72,7 @@ jobs:
         with:
           name: genome-chunks
       
-      - name: Download, Sketch, and Paste (Chunk ${{ matrix.chunk }})
+      - name: Download, Unzip, and Sketch Genomes (Chunk ${{ matrix.chunk }})
         run: |
           export PATH=$(pwd):$PATH
           INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
@@ -80,16 +80,12 @@ jobs:
 
           echo "Processing ${INPUT_FILE} one genome at a time..."
           
-          # This robust loop processes one genome at a time to conserve disk space
           while IFS=$'\t' read -r accession organism_name; do
             if [ -z "$accession" ]; then continue; fi
 
             echo "--- Processing $accession ---"
-            
-            # Use a temporary directory for each genome to keep things clean
             mkdir -p temp_genome_files
             
-            # Retry loop for downloading
             success=false
             for i in 1 2 3; do
               if ./datasets download genome accession "$accession" --no-progressbar --filename "temp_genome_files/genome.zip"; then
@@ -106,7 +102,6 @@ jobs:
               continue
             fi
 
-            # Unzip and find the fasta file
             unzip -q -o temp_genome_files/genome.zip -d temp_genome_files/unzipped
             fasta_file=$(find temp_genome_files/unzipped -name "*.fna")
 
@@ -116,10 +111,8 @@ jobs:
                 continue
             fi
             
-            # Sketch the single genome
             ./mash sketch -k 21 -s 1000 -p 8 -o temp_genome_files/single.msh "$fasta_file"
             
-            # Iteratively paste into the main sketch file for this chunk
             if [ ! -f "$OUTPUT_SKETCH" ]; then
               mv temp_genome_files/single.msh "$OUTPUT_SKETCH"
             else
@@ -128,7 +121,6 @@ jobs:
               rm temp_chunk.msh
             fi
             
-            # CRITICAL STEP: Clean up files before the next loop
             rm -rf temp_genome_files
             
           done < "$INPUT_FILE"
@@ -137,14 +129,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: partial-sketch-${{ matrix.chunk }}
-          path: ${{ env.OUTPUT_SKETCH }}
+          # === THIS IS THE CORRECTED LINE ===
+          # Directly provide the filename that the previous step creates.
+          path: chunk_${{ matrix.chunk }}.msh
           overwrite: true
 
   # --------------------------------------------------------------------------
   # JOB 3: Combine all partial sketches into the final database
   # --------------------------------------------------------------------------
   combine_sketches:
-    if: success() || failure()
+    # This job will run only if the create_sketches jobs succeed
     needs: create_sketches
     runs-on: ubuntu-latest
     steps:
@@ -153,10 +147,10 @@ jobs:
           wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
           tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
       
-      - name: Download all successful sketch artifacts
+      - name: Download all partial sketch artifacts
         uses: actions/download-artifact@v4
         with:
-          name: partial-sketch-*
+          name: partial-sketch- # Downloads all artifacts starting with this prefix
           path: partial_sketches/
       
       - name: Combine all sketches
@@ -164,16 +158,15 @@ jobs:
           export PATH=$(pwd):$PATH
           FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
           echo "Pasting all partial sketches into ${FINAL_SKETCH_NAME}..."
+          # Check if any sketches were actually downloaded
           if [ -z "$(ls -A partial_sketches)" ]; then
             echo "No sketches were downloaded. Cannot create final database."
             exit 1
           fi
-          ./mash paste "$FINAL_SKETCH_NAME" $(find partial_sketches -name "*.msh")
+          ./mash paste "$FINAL_SKETCH_NAME" partial_sketches/*/chunk_*.msh
 
       - name: Compress final sketch
-        run: |
-          FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
-          gzip "$FINAL_SKETCH_NAME"
+        run: gzip Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh
 
       - name: Create Release and Upload Final Sketch
         uses: softprops/action-gh-release@v2
