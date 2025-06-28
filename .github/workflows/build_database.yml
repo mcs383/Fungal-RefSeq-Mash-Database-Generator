@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       refseq_version:
-        description: 'A version tag for this database build (e.g., 2025.06)'
+        description: 'Enter the RefSeq version to use as a tag (e.g., v231)'
         required: true
-        default: '2025.06'
 
 jobs:
   # --------------------------------------------------------------------------
@@ -40,7 +39,6 @@ jobs:
 
       - name: Split id list for parallel jobs
         run: |
-          # Split into 10 chunks for the matrix
           split -n l/10 ids.tsv -d --additional-suffix=.tsv x
 
       - name: Upload list chunks for next job
@@ -51,15 +49,13 @@ jobs:
           overwrite: true
 
   # --------------------------------------------------------------------------
-  # JOB 2: Create sketches for each chunk in parallel (Final Robust Version)
+  # JOB 2: Create sketches for each chunk in parallel
   # --------------------------------------------------------------------------
   create_sketches:
     needs: list_genomes
     runs-on: ubuntu-latest
-    # Increase the timeout as this job can be long
     timeout-minutes: 720 # 12 hours
     strategy:
-      # Run jobs in parallel, but don't cancel others if one fails
       fail-fast: false
       matrix:
         chunk: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -76,29 +72,25 @@ jobs:
         with:
           name: genome-chunks
       
-      - name: Download and Unzip All Genomes in Chunk
+      - name: Download, Unzip, and Sketch Genomes (Chunk ${{ matrix.chunk }})
         run: |
           export PATH=$(pwd):$PATH
           INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
+          OUTPUT_SKETCH="chunk_${{ matrix.chunk }}.msh"
+
           echo "Processing ${INPUT_FILE}..."
-          
           mkdir -p genomes_zip
-          # Download all genomes for this chunk first
+          
           cat "$INPUT_FILE" | cut -f1 | xargs -n 1 -P 8 ./datasets download genome accession --no-progressbar --filename "genomes_zip/{}.zip"
           
           echo "Unzipping all downloaded genomes..."
           mkdir -p genomes_fna
           for zipfile in genomes_zip/*.zip; do
             unzip -q -o "$zipfile" -d "unzipped_tmp"
-            # Find the actual fasta file and move it to our clean directory
             find unzipped_tmp/ncbi_dataset/data -name "*.fna" -exec mv {} genomes_fna/ \;
             rm -rf unzipped_tmp
           done
           
-      - name: Sketch all genomes in this chunk at once
-        run: |
-          export PATH=$(pwd):$PATH
-          OUTPUT_SKETCH="chunk_${{ matrix.chunk }}.msh"
           echo "Sketching all genomes for this chunk..."
           ./mash sketch -k 21 -s 1000 -p 8 -o "$OUTPUT_SKETCH" genomes_fna/*.fna
 
@@ -113,7 +105,6 @@ jobs:
   # JOB 3: Combine all partial sketches into the final database
   # --------------------------------------------------------------------------
   combine_sketches:
-    # This job will run even if some of the sketching jobs failed
     if: success() || failure()
     needs: create_sketches
     runs-on: ubuntu-latest
@@ -130,22 +121,24 @@ jobs:
           path: partial_sketches/
       
       - name: Combine all sketches
-        id: paste
         run: |
           export PATH=$(pwd):$PATH
-          echo "Pasting all partial sketches..."
+          FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
+          echo "Pasting all partial sketches into ${FINAL_SKETCH_NAME}..."
           if [ -z "$(ls -A partial_sketches)" ]; then
             echo "No sketches were downloaded. Cannot create final database."
             exit 1
           fi
-          ./mash paste Fungi_RefSeq_Database.msh $(find partial_sketches -name "*.msh")
+          ./mash paste "$FINAL_SKETCH_NAME" $(find partial_sketches -name "*.msh")
 
       - name: Compress final sketch
-        run: gzip Fungi_RefSeq_Database.msh
+        run: |
+          FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
+          gzip "$FINAL_SKETCH_NAME"
 
       - name: Create Release and Upload Final Sketch
         uses: softprops/action-gh-release@v2
         with:
           name: Fungal RefSeq Database ${{ github.event.inputs.refseq_version }}
           tag_name: ${{ github.event.inputs.refseq_version }}
-          files: Fungi_RefSeq_Database.msh.gz
+          files: Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh.gz
