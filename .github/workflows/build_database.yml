@@ -135,10 +135,11 @@ jobs:
           overwrite: true
 
   # --------------------------------------------------------------------------
-  # JOB 3: Combine all partial sketches into the final database
+  # JOB 3: Combine all partial sketches (Corrected Download Logic)
   # --------------------------------------------------------------------------
   combine_sketches:
-    # This job will run only if the create_sketches jobs succeed
+    # This job will run even if some of the sketching jobs from the matrix failed
+    if: success() || failure()
     needs: create_sketches
     runs-on: ubuntu-latest
     steps:
@@ -147,26 +148,32 @@ jobs:
           wget -q https://github.com/marbl/Mash/releases/download/v2.3/mash-Linux64-v2.3.tar
           tar -xvf mash-Linux64-v2.3.tar && mv mash-Linux64-v2.3/mash .
       
-      - name: Download all partial sketch artifacts
+      - name: Download all created sketch artifacts
         uses: actions/download-artifact@v4
         with:
-          name: partial-sketch- # Downloads all artifacts starting with this prefix
+          # By NOT specifying a 'name', this action downloads ALL artifacts from this workflow run.
+          # The artifacts are placed into subdirectories named after the artifact.
           path: partial_sketches/
       
       - name: Combine all sketches
         run: |
           export PATH=$(pwd):$PATH
           FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
-          echo "Pasting all partial sketches into ${FINAL_SKETCH_NAME}..."
-          # Check if any sketches were actually downloaded
-          if [ -z "$(ls -A partial_sketches)" ]; then
-            echo "No sketches were downloaded. Cannot create final database."
+          echo "Pasting all downloaded partial sketches into ${FINAL_SKETCH_NAME}..."
+
+          # Check if the directory with sketches exists and is not empty
+          if [ ! -d "partial_sketches" ] || [ -z "$(ls -A partial_sketches)" ]; then
+            echo "No sketch artifacts were downloaded. Cannot create final database."
             exit 1
           fi
-          ./mash paste "$FINAL_SKETCH_NAME" partial_sketches/*/chunk_*.msh
+          
+          # The 'find' command will locate all .msh files within the downloaded artifact subdirectories
+          ./mash paste "$FINAL_SKETCH_NAME" $(find partial_sketches -name "*.msh")
 
       - name: Compress final sketch
-        run: gzip Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh
+        run: |
+          FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
+          gzip "$FINAL_SKETCH_NAME"
 
       - name: Create Release and Upload Final Sketch
         uses: softprops/action-gh-release@v2
