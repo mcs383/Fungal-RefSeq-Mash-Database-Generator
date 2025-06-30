@@ -31,7 +31,7 @@ This repository uses a single workflow (`refseq_fungal_mash_db_builder.yaml`) th
 1.  **Fork this Repository:** Create your own copy of this repository by clicking the "Fork" button.
 2.  **Enable Actions:** Go to the "Actions" tab of your newly forked repository. You may need to click a button to enable workflows.
 3.  **Run the Workflow:**
-    * In the Actions tab, select **"Build Fungal RefSeq Database"** from the list of workflows on the left.
+    * In the Actions tab, select **"Build a mash sketch database of all fungal genomes in RefSeq"** from the list of workflows on the left.
     * Click the **"Run workflow"** button on the right.
     * You will be prompted to enter a **version tag** of the current version of the RefSeq database (e.g. `v230`, `v231`, etc.). This tag will be used to label your final release.
     * Click the final green **"Run workflow"** button.
