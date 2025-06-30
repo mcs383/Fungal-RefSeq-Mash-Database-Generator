@@ -48,22 +48,26 @@ To ensure your downloaded or newly-built Mash sketch file is complete, you can c
 
 First, find out how many fungal reference genomes NCBI currently has in its database. This command queries the database directly. (Note: you must have the `ncbi-datasets-cli` tool installed and in your `PATH`).
 
-```bash
-datasets summary genome taxon 4751 --reference | grep "total_count"
-This should print a line that looks something like this. Take note of the number.
-
-  "total_count": 5088
 ```
+bash
+datasets summary genome taxon 4751 --reference | grep "total_count"
+```
+
+This should print a number, for eample:
+
+```"total_count": 5088```
   
 ***Step 2: Count the Genomes in Your Sketch File***
 
 Next, use the mash info command to count how many individual genomes are inside your .msh file. Make sure you are in the directory containing your sketch file.
 
-```bash
+```
+bash
 # Replace Your_Sketch_File.msh with your actual file name
 mash info -t Your_Sketch_File.msh | wc -l
-This will print a single number, which is the total count of sketches in your file.
 ```
+
+This should print a single number, which is the total count of sketches in your file.
 
 ***Step 3: Compare the Numbers***
 
