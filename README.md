@@ -7,7 +7,7 @@ The workflow was adapted from [erinyoung/update_mash_dist](https://github.com/er
 
 ## How it Works
 
-This repository uses a single workflow (`.github/workflows/build_database.yml`) that automates the entire process using GitHub's own servers. The workflow consists of three main jobs that run in sequence:
+This repository uses a single workflow (`refseq_fungal_mash_db_builder.yaml`) that automates the entire process using GitHub's own servers. The workflow consists of three main jobs that run in sequence:
 
 1.  **Job 1: `list_genomes`**
     * Connects to the NCBI database and downloads a complete list of accession numbers for all currently available fungal reference genomes (NCBI `taxon 4751`).
