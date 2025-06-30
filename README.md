@@ -76,7 +76,7 @@ If you use this workflow or the database it generates in your research, please c
 
 You can use the following format:
 
-> [Smardz, M. C.], & Young, E. (2025). *Fungal RefSeq Mash Database Generator: An automated GitHub Actions workflow for creating up-to-date fungal mash sketch databases* (Version 1.0). GitHub. [[(https://github.com/mcs383/fungi_mash_dist)](https://github.com/mcs383/Fungal-RefSeq-Mash-Database-Generator.git)]
+> [Smardz, M. C.], & Young, E. (2025). *Fungal RefSeq Mash Database Generator: An automated GitHub Actions workflow for creating up-to-date fungal mash sketch databases* (Version 1.0). GitHub. [[(https://github.com/mcs383/Fungal-RefSeq-Mash-Database-Generator)](https://github.com/mcs383/Fungal-RefSeq-Mash-Database-Generator)]
 
 ## Acknowledgments
 
