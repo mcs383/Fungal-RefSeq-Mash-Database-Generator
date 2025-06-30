@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       refseq_version:
-        description: 'Enter the RefSeq version to use as a tag (e.g. v230, v231, etc.)'
+        description: 'Enter the RefSeq version to use as a tag with no spaces (e.g. v230, v231, etc.)'
         required: true
 
 jobs:
