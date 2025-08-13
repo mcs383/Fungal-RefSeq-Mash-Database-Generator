@@ -22,9 +22,9 @@ This repository uses a single workflow (`refseq_fungal_mash_db_builder.yaml`) th
 
 3.  **Job 3: `combine_sketches`**
     * This final job runs only after all 10 sketching jobs are complete.
-    * It downloads all 10 of the partial sketch artifacts.
+    * It downloads all 10 of the partial sketch artifacts and the final `ids.tsv` list.  
     * It uses `mash paste` to merge them into one final, comprehensive database sketch file.
-    * It then compresses the final sketch and creates a formal **GitHub Release**, attaching the file for easy download.
+    * It then compresses the final sketch and creates a formal **GitHub Release**, attaching both the sketch file and the complete `ids.tsv` list for download.
 
 ## How to Use This Workflow
 
@@ -36,7 +36,7 @@ This repository uses a single workflow (`refseq_fungal_mash_db_builder.yaml`) th
     * You will be prompted to enter a **version tag** of the current version of the RefSeq database (e.g. `v230`, `v231`, etc.). This tag will be used to label your final release.
     * Click the final green **"Run workflow"** button.
 4.  **Wait:** The process will take a few hours to complete. You can close your browser and computer; the job will continue running on GitHub's servers. You can monitor its progress on the "Actions" tab at any time.
-5.  **Download Your Database:** When the workflow is complete (it will have a green checkmark ✅), go to the main page of your repository. On the right-hand side, click on **"Releases"**. Your new database will be there, attached as a `.msh.gz` file, ready to download.
+5.  **Download Your Database:** When the workflow is complete (it will have a green checkmark ✅), go to the main page of your repository. On the right-hand side, click on **"Releases"**. Your new database will be there, attached as a `.msh.gz` file and an `ids.tsv` file containing the list of genome sketches in the database, ready to download.
 
 ## Once downloaded ensure the numebr of sketches matches the number of genomes in the current RefSeq Database
 
