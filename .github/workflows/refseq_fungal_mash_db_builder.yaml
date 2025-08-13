@@ -13,8 +13,6 @@ jobs:
   # --------------------------------------------------------------------------
   list_genomes:
     runs-on: ubuntu-latest
-    outputs:
-      genome_count: ${{ steps.check_size.outputs.count }}
     steps:
       - name: Check Out Repository
         uses: actions/checkout@v4
@@ -23,6 +21,7 @@ jobs:
         run: |
           wget -q https://ftp.ncbi.nlm.nih.gov/pub/datasets/command-line/v2/linux-amd64/datasets
           chmod +x datasets
+          sudo apt-get update && sudo apt-get install -y jq
 
       - name: Get Fungal Genome List
         run: |
@@ -31,11 +30,9 @@ jobs:
           jq -r '[.accession, .organism.organism_name] | @tsv' > ids.tsv
 
       - name: Check list size
-        id: check_size
         run: |
           count=$(wc -l < ids.tsv)
           echo "Found ${count} fungal genomes."
-          echo "count=${count}" >> $GITHUB_OUTPUT
 
       - name: Split id list for parallel jobs
         run: |
@@ -48,13 +45,20 @@ jobs:
           path: x*.tsv
           overwrite: true
 
+      - name: Upload full id list for the release
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-id-list
+          path: ids.tsv
+          overwrite: true
+
   # --------------------------------------------------------------------------
   # JOB 2: Create sketches for each chunk in parallel
   # --------------------------------------------------------------------------
   create_sketches:
     needs: list_genomes
     runs-on: ubuntu-latest
-    timeout-minutes: 720 # 12 hours
+    timeout-minutes: 720
     strategy:
       fail-fast: false
       matrix:
@@ -77,12 +81,10 @@ jobs:
           export PATH=$(pwd):$PATH
           INPUT_FILE=$(printf "x%02d.tsv" ${{ matrix.chunk }})
           OUTPUT_SKETCH="chunk_${{ matrix.chunk }}.msh"
-
           echo "Processing ${INPUT_FILE} one genome at a time..."
           
           while IFS=$'\t' read -r accession organism_name; do
             if [ -z "$accession" ]; then continue; fi
-
             echo "--- Processing $accession ---"
             mkdir -p temp_genome_files
             
@@ -129,16 +131,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: partial-sketch-${{ matrix.chunk }}
-          # === THIS IS THE CORRECTED LINE ===
-          # Directly provide the filename that the previous step creates.
           path: chunk_${{ matrix.chunk }}.msh
           overwrite: true
 
   # --------------------------------------------------------------------------
-  # JOB 3: Combine all partial sketches (Corrected Download Logic)
+  # JOB 3: Combine all partial sketches and release files
   # --------------------------------------------------------------------------
   combine_sketches:
-    # This job will run even if some of the sketching jobs from the matrix failed
     if: success() || failure()
     needs: create_sketches
     runs-on: ubuntu-latest
@@ -151,28 +150,24 @@ jobs:
       - name: Download all created sketch artifacts
         uses: actions/download-artifact@v4
         with:
-          # By NOT specifying a 'name', this action downloads ALL artifacts from this workflow run.
-          # The artifacts are placed into subdirectories named after the artifact.
           path: partial_sketches/
       
-      - name: Combine all sketches
+      - name: Download final ID list
+        uses: actions/download-artifact@v4
+        with:
+          name: final-id-list
+      
+      - name: Combine, Compress, and Prepare for Release
         run: |
           export PATH=$(pwd):$PATH
           FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
-          echo "Pasting all downloaded partial sketches into ${FINAL_SKETCH_NAME}..."
-
-          # Check if the directory with sketches exists and is not empty
-          if [ ! -d "partial_sketches" ] || [ -z "$(ls -A partial_sketches)" ]; then
-            echo "No sketch artifacts were downloaded. Cannot create final database."
+          echo "Pasting all partial sketches into ${FINAL_SKETCH_NAME}..."
+          if [ -z "$(ls -A partial_sketches)" ]; then
+            echo "No sketches were downloaded. Cannot create final database."
             exit 1
           fi
-          
-          # The 'find' command will locate all .msh files within the downloaded artifact subdirectories
           ./mash paste "$FINAL_SKETCH_NAME" $(find partial_sketches -name "*.msh")
-
-      - name: Compress final sketch
-        run: |
-          FINAL_SKETCH_NAME="Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh"
+          echo "Compressing the final sketch..."
           gzip "$FINAL_SKETCH_NAME"
 
       - name: Create Release and Upload Final Sketch
@@ -180,4 +175,7 @@ jobs:
         with:
           name: Fungal RefSeq Database ${{ github.event.inputs.refseq_version }}
           tag_name: ${{ github.event.inputs.refseq_version }}
-          files: Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh.gz
+          # === MODIFIED 'files' SECTION ===
+          files: |
+            Fungi_RefSeq_${{ github.event.inputs.refseq_version }}.msh.gz
+            ids.tsv
