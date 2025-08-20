@@ -78,7 +78,7 @@ The number from Step 2 should be identical or very close to the total_count from
 
 If you use this workflow or the database it generates in your research, please cite this GitHub repository. This helps us track the impact of our work and justify its continued maintenance:
 
->Smardz, M. C. (2025). *Fungal RefSeq Mash Database Generator: An automated GitHub Actions workflow for creating up-to-date fungal mash sketch databases* (Version 1.0). GitHub. https://github.com/mcs383/Fungal-RefSeq-Mash-Database-Generator
+>Smardz, M. C. (2025). *Fungal RefSeq Mash Database Generator: An automated GitHub Actions workflow for creating up-to-date fungal mash sketch databases*. GitHub. https://github.com/mcs383/Fungal-RefSeq-Mash-Database-Generator
 
 ## Acknowledgments
 
